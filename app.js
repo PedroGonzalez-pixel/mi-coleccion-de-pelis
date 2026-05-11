@@ -15,7 +15,7 @@ const TMDB_API_KEY = "dd27e4c668d68859a2383ff890147522"; // ← colle ta clé TM
 // Seuls ces 2 emails peuvent accéder à l'app
 const ALLOWED_EMAILS = [
   "jean.pierre.gonzalez@gmail.com",   // ← remplace
-  "jpg45575@gmail.com"    // ← remplace
+  "celya31@gmail.com"    // ← remplace
 ];
 
 // ─────────────────────────────────────────
