@@ -1,98 +1,80 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Mi colección de películas - Bienvenido a mi página personal">
-    <title>Mi Colección de Pelis</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 40px 20px;
-            line-height: 1.6;
-        }
-        
-        main {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-        
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px;
-            text-align: center;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-        
-        .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        section {
-            padding: 40px;
-        }
-        
-        p {
-            color: #555;
-            font-size: 1.05rem;
-            margin-bottom: 20px;
-        }
-        
-        footer {
-            background-color: #f4f4f4;
-            text-align: center;
-            padding: 20px;
-            color: #888;
-            font-size: 0.9rem;
-            border-top: 1px solid #ddd;
-        }
-        
-        a {
-            color: #667eea;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mi Colección de Pelis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-    <main>
-        <header>
-            <h1>🎬 Mi Colección de Pelis</h1>
-            <p class="subtitle">Bienvenido a mi página</p>
-        </header>
-        
-        <section>
-            <p>Esta es una página HTML moderna y responsive.</p>
-            <p>¡Puedes agregar tu colección de películas aquí!</p>
-        </section>
-        
-        <footer>
-            <p>&copy; 2026 Mi Colección de Películas. Todos los derechos reservados.</p>
-        </footer>
-    </main>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <div class="login-logo">🎬</div>
+      <h1>Mi Colección<br>de Pelis</h1>
+      <p id="login-subtitle"></p>
+      <div class="lang-switcher login-lang">
+        <button class="lang-btn active" data-lang="fr">🇫🇷 FR</button>
+        <button class="lang-btn" data-lang="es">🇪🇸 ES</button>
+        <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+      </div>
+      <button id="btn-login">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
+        </svg>
+        <span id="login-btn-text"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <header>
+      <h1>🎬 Mi Colección</h1>
+      <div class="header-right">
+        <div class="lang-switcher">
+          <button class="lang-btn active" data-lang="fr">🇫🇷</button>
+          <button class="lang-btn" data-lang="es">🇪🇸</button>
+          <button class="lang-btn" data-lang="en">🇬🇧</button>
+        </div>
+        <span id="user-email"></span>
+        <button id="btn-logout"></button>
+      </div>
+    </header>
+
+    <div class="search-section">
+      <div class="search-bar">
+        <input type="text" id="search-input" autocomplete="off"/>
+        <button id="btn-search"></button>
+      </div>
+      <div id="search-results" class="hidden"></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="to_watch">
+        <span id="tab-to-watch-label"></span> <span id="count-to-watch">0</span>
+      </button>
+      <button class="tab" data-tab="watched">
+        <span id="tab-watched-label"></span> <span id="count-watched">0</span>
+      </button>
+    </div>
+
+    <div id="list-to_watch" class="movie-grid"></div>
+    <div id="list-watched" class="movie-grid hidden"></div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal" class="hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
