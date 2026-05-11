@@ -10,7 +10,7 @@
 </head>
 <body>
 
-  <!-- LOGIN SCREEN -->
+  <!-- LOGIN -->
   <div id="login-screen">
     <div class="login-box">
       <div class="login-logo">🎬</div>
@@ -45,6 +45,7 @@
       </div>
     </header>
 
+    <!-- SEARCH -->
     <div class="search-section">
       <div class="search-bar">
         <input type="text" id="search-input" autocomplete="off"/>
@@ -53,6 +54,7 @@
       <div id="search-results" class="hidden"></div>
     </div>
 
+    <!-- TABS -->
     <div class="tabs">
       <button class="tab active" data-tab="to_watch">
         <span id="tab-to-watch-label"></span> <span id="count-to-watch">0</span>
@@ -62,6 +64,26 @@
       </button>
     </div>
 
+    <!-- TOOLBAR: sort + filter + view -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <!-- Sort -->
+        <select id="sort-select" class="tb-select"></select>
+        <!-- Genre filter -->
+        <select id="genre-select" class="tb-select"></select>
+      </div>
+      <div class="toolbar-right">
+        <!-- View toggle -->
+        <button class="view-btn active" id="btn-gallery" title="Galerie">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="9" height="9" rx="1.5"/><rect x="13" y="2" width="9" height="9" rx="1.5"/><rect x="2" y="13" width="9" height="9" rx="1.5"/><rect x="13" y="13" width="9" height="9" rx="1.5"/></svg>
+        </button>
+        <button class="view-btn" id="btn-list" title="Liste">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="4" width="20" height="2.5" rx="1.25"/><rect x="2" y="10.75" width="20" height="2.5" rx="1.25"/><rect x="2" y="17.5" width="20" height="2.5" rx="1.25"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MOVIE LISTS -->
     <div id="list-to_watch" class="movie-grid"></div>
     <div id="list-watched" class="movie-grid hidden"></div>
   </div>
