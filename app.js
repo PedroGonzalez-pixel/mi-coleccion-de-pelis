@@ -19,15 +19,14 @@ const ALLOWED_EMAILS = [
 ];
 
 
-
 // ─────────────────────────────────────────
-//  SMILEYS — 4 niveaux partagés
+//  SMILEYS
 // ─────────────────────────────────────────
 const SMILEYS = [
-  { value: 1, emoji: "😞", fr: "Pas aimé",  es: "No me gustó", en: "Didn't like it" },
-  { value: 2, emoji: "😐", fr: "Sans plus", es: "Regular",      en: "It was ok"      },
-  { value: 3, emoji: "😊", fr: "Aimé",      es: "Me gustó",    en: "Liked it"       },
-  { value: 4, emoji: "🤩", fr: "Adoré",     es: "¡Me encantó!", en: "Loved it!"     },
+  { value: 1, emoji: "😞", fr: "Pas aimé",   es: "No me gustó",  en: "Didn't like it" },
+  { value: 2, emoji: "😐", fr: "Sans plus",  es: "Regular",       en: "It was ok"      },
+  { value: 3, emoji: "😊", fr: "Aimé",       es: "Me gustó",     en: "Liked it"       },
+  { value: 4, emoji: "🤩", fr: "Adoré",      es: "¡Me encantó!", en: "Loved it!"      },
 ];
 
 // ─────────────────────────────────────────
@@ -35,69 +34,78 @@ const SMILEYS = [
 // ─────────────────────────────────────────
 const I18N = {
   fr: {
-    loginSubtitle:"Votre liste de films partagée", loginBtn:"Connexion avec Google",
-    logout:"Déconnexion", searchPlaceholder:"Rechercher un film…", searchBtn:"Rechercher",
-    tabToWatch:"À voir", tabWatched:"Vus", loading:"Chargement…",
+    loginSubtitle:"Votre liste partagée", loginBtn:"Connexion avec Google",
+    logout:"Déconnexion", searchPlaceholder:"Rechercher un film ou une série…", searchBtn:"Rechercher",
+    tabToWatch:"À voir", tabWatched:"Vus / Vues", loading:"Chargement…",
     noResults:"Aucun résultat", searching:"Recherche…",
     addBtn:"+ Ajouter", addedBtn:"✓ Ajouté",
     markWatched:"✓ Marquer comme vu", markToWatch:"↩ Remettre à voir", removeBtn:"Supprimer",
     trailerBtn:"▶ Bande-annonce", addToList:"+ Ajouter à la liste",
-    director:"Réalisateur·rice", cast:"Avec",
-    emptyToWatch:"Aucun film à voir pour l'instant", emptyWatched:"Aucun film vu pour l'instant",
+    director:"Réalisateur·rice", cast:"Avec", creator:"Créé par",
+    seasons:(n)=> n > 1 ? `${n} saisons` : `${n} saison`,
+    emptyToWatch:"Aucun titre à voir pour l'instant", emptyWatched:"Aucun titre vu pour l'instant",
     confirmRemove:(t)=>`Supprimer "${t}" de la liste ?`,
     unauthorizedAlert:"Accès non autorisé pour ce compte Gmail.",
     sortDateDesc:"Date ajout ↓", sortDateAsc:"Date ajout ↑",
     sortAlphaAZ:"A → Z", sortAlphaZA:"Z → A",
     sortSmileyDesc:"Note ↓", sortSmileyAsc:"Note ↑",
     allGenres:"Tous les genres",
+    filterAll:"Tout", filterMovies:"🎬 Films", filterSeries:"📺 Séries",
+    badgeMovie:"Film", badgeSerie:"Série",
     ratingPopupTitle:"Vous avez aimé ?",
     ratingPopupSub:(title)=>`Que pensez-vous de "${title}" ?`,
     ratingPopupSkip:"Passer",
-    yourRating:"Note :", changeRating:"Modifier",
+    yourRating:"Note :",
     tmdbLang:"fr-FR",
   },
   es: {
-    loginSubtitle:"Tu lista de películas compartida", loginBtn:"Iniciar sesión con Google",
-    logout:"Cerrar sesión", searchPlaceholder:"Buscar una película…", searchBtn:"Buscar",
+    loginSubtitle:"Tu lista compartida", loginBtn:"Iniciar sesión con Google",
+    logout:"Cerrar sesión", searchPlaceholder:"Buscar una película o serie…", searchBtn:"Buscar",
     tabToWatch:"Por ver", tabWatched:"Vistas", loading:"Cargando…",
     noResults:"Sin resultados", searching:"Buscando…",
     addBtn:"+ Añadir", addedBtn:"✓ Añadida",
     markWatched:"✓ Marcar como vista", markToWatch:"↩ Mover a por ver", removeBtn:"Eliminar",
     trailerBtn:"▶ Tráiler", addToList:"+ Añadir a la lista",
-    director:"Director/a", cast:"Con",
-    emptyToWatch:"No hay películas por ver", emptyWatched:"No hay películas vistas",
+    director:"Director/a", cast:"Con", creator:"Creado por",
+    seasons:(n)=> n > 1 ? `${n} temporadas` : `${n} temporada`,
+    emptyToWatch:"No hay títulos por ver", emptyWatched:"No hay títulos vistos",
     confirmRemove:(t)=>`¿Eliminar "${t}" de la lista?`,
     unauthorizedAlert:"Acceso no autorizado para esta cuenta de Gmail.",
     sortDateDesc:"Fecha añadido ↓", sortDateAsc:"Fecha añadido ↑",
     sortAlphaAZ:"A → Z", sortAlphaZA:"Z → A",
     sortSmileyDesc:"Nota ↓", sortSmileyAsc:"Nota ↑",
     allGenres:"Todos los géneros",
+    filterAll:"Todo", filterMovies:"🎬 Películas", filterSeries:"📺 Series",
+    badgeMovie:"Película", badgeSerie:"Serie",
     ratingPopupTitle:"¿Te gustó?",
     ratingPopupSub:(title)=>`¿Qué opinas de "${title}"?`,
     ratingPopupSkip:"Omitir",
-    yourRating:"Nota :", changeRating:"Cambiar",
+    yourRating:"Nota :",
     tmdbLang:"es-ES",
   },
   en: {
-    loginSubtitle:"Your shared movie list", loginBtn:"Sign in with Google",
-    logout:"Sign out", searchPlaceholder:"Search for a movie…", searchBtn:"Search",
+    loginSubtitle:"Your shared watchlist", loginBtn:"Sign in with Google",
+    logout:"Sign out", searchPlaceholder:"Search movies or TV shows…", searchBtn:"Search",
     tabToWatch:"To Watch", tabWatched:"Watched", loading:"Loading…",
     noResults:"No results found", searching:"Searching…",
     addBtn:"+ Add", addedBtn:"✓ Added",
     markWatched:"✓ Mark as watched", markToWatch:"↩ Move to watchlist", removeBtn:"Remove",
     trailerBtn:"▶ Trailer", addToList:"+ Add to list",
-    director:"Director", cast:"With",
-    emptyToWatch:"No movies in your watchlist yet", emptyWatched:"No watched movies yet",
+    director:"Director", cast:"With", creator:"Created by",
+    seasons:(n)=> n > 1 ? `${n} seasons` : `${n} season`,
+    emptyToWatch:"Nothing in your watchlist yet", emptyWatched:"Nothing watched yet",
     confirmRemove:(t)=>`Remove "${t}" from the list?`,
     unauthorizedAlert:"Access not allowed for this Gmail account.",
     sortDateDesc:"Date added ↓", sortDateAsc:"Date added ↑",
     sortAlphaAZ:"A → Z", sortAlphaZA:"Z → A",
     sortSmileyDesc:"Rating ↓", sortSmileyAsc:"Rating ↑",
     allGenres:"All genres",
+    filterAll:"All", filterMovies:"🎬 Movies", filterSeries:"📺 Series",
+    badgeMovie:"Movie", badgeSerie:"Series",
     ratingPopupTitle:"Did you enjoy it?",
     ratingPopupSub:(title)=>`What did you think of "${title}"?`,
     ratingPopupSkip:"Skip",
-    yourRating:"Rating :", changeRating:"Change",
+    yourRating:"Rating :",
     tmdbLang:"en-US",
   },
 };
@@ -120,14 +128,33 @@ const gProvider = new GoogleAuthProvider();
 // ─────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────
-let movies      = {};
+let movies      = {};                                     // clé : "{mediaType}_{tmdbId}"
 let currentTab  = "to_watch";
-let currentLang = localStorage.getItem("lang") || "fr";
-let viewMode    = localStorage.getItem("view") || "gallery";
-let sortMode    = localStorage.getItem("sort") || "date_desc";
+let currentLang = localStorage.getItem("lang")   || "fr";
+let viewMode    = localStorage.getItem("view")   || "gallery";
+let sortMode    = localStorage.getItem("sort")   || "date_desc";
 let genreFilter = "all";
+let mediaFilter = "all";                                  // "all" | "movie" | "tv"
 let unsubscribe = null;
 let currentUser = null;
+
+// ─────────────────────────────────────────
+//  HELPERS TMDB — films vs séries
+// ─────────────────────────────────────────
+// Normalise un résultat TMDB (movie ou tv) en objet uniforme
+function normalizeTmdb(item, mediaType) {
+  return {
+    tmdbId:    item.id,
+    mediaType, // "movie" | "tv"
+    title:     mediaType === "tv" ? item.name        : item.title,
+    year:      mediaType === "tv" ? item.first_air_date?.slice(0,4) : item.release_date?.slice(0,4),
+    posterPath:item.poster_path || "",
+    overview:  item.overview   || "",
+  };
+}
+
+// Clé unique Firestore : combine type + id pour éviter les collisions
+function docKey(mediaType, tmdbId) { return `${mediaType}_${tmdbId}`; }
 
 // ─────────────────────────────────────────
 //  I18N
@@ -135,10 +162,6 @@ let currentUser = null;
 const t = (key, ...args) => {
   const val = I18N[currentLang][key];
   return typeof val === "function" ? val(...args) : (val ?? key);
-};
-const smileyLabel = (value) => {
-  const s = SMILEYS.find(s => s.value === value);
-  return s ? s[currentLang] : "";
 };
 
 function applyTranslations() {
@@ -153,6 +176,7 @@ function applyTranslations() {
   document.querySelectorAll(".lang-btn").forEach(b =>
     b.classList.toggle("active", b.dataset.lang === currentLang));
   buildSortSelect();
+  buildMediaFilter();
   renderLists();
 }
 function setLang(lang) { currentLang = lang; localStorage.setItem("lang", lang); applyTranslations(); }
@@ -164,12 +188,12 @@ document.querySelectorAll(".lang-btn").forEach(b => b.addEventListener("click", 
 function buildSortSelect() {
   const sel = document.getElementById("sort-select");
   const opts = [
-    ["date_desc",    t("sortDateDesc")],
-    ["date_asc",     t("sortDateAsc")],
-    ["alpha_az",     t("sortAlphaAZ")],
-    ["alpha_za",     t("sortAlphaZA")],
-    ["smiley_desc",  t("sortSmileyDesc")],
-    ["smiley_asc",   t("sortSmileyAsc")],
+    ["date_desc",   t("sortDateDesc")],
+    ["date_asc",    t("sortDateAsc")],
+    ["alpha_az",    t("sortAlphaAZ")],
+    ["alpha_za",    t("sortAlphaZA")],
+    ["smiley_desc", t("sortSmileyDesc")],
+    ["smiley_asc",  t("sortSmileyAsc")],
   ];
   sel.innerHTML = opts.map(([v,l]) =>
     `<option value="${v}" ${sortMode===v?"selected":""}>${l}</option>`).join("");
@@ -179,12 +203,41 @@ document.getElementById("sort-select").addEventListener("change", e => {
 });
 
 // ─────────────────────────────────────────
+//  MEDIA TYPE FILTER (Films / Séries / Tout)
+// ─────────────────────────────────────────
+function buildMediaFilter() {
+  const sel = document.getElementById("genre-select");
+  // On insère les boutons Films/Séries AVANT le select genre si pas déjà fait
+  let mf = document.getElementById("media-filter");
+  if (!mf) {
+    mf = document.createElement("div");
+    mf.id = "media-filter";
+    mf.className = "media-filter";
+    sel.parentNode.insertBefore(mf, sel);
+  }
+  mf.innerHTML = [
+    ["all",   t("filterAll")],
+    ["movie", t("filterMovies")],
+    ["tv",    t("filterSeries")],
+  ].map(([v,l]) =>
+    `<button class="mf-btn ${mediaFilter===v?"active":""}" data-mf="${v}">${l}</button>`
+  ).join("");
+  mf.querySelectorAll(".mf-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      mediaFilter = btn.dataset.mf;
+      mf.querySelectorAll(".mf-btn").forEach(b => b.classList.toggle("active", b.dataset.mf===mediaFilter));
+      renderLists();
+    });
+  });
+}
+
+// ─────────────────────────────────────────
 //  GENRE FILTER
 // ─────────────────────────────────────────
 function buildGenreSelect() {
   const allGenres = new Set();
   Object.values(movies).forEach(m => (m.genres||[]).forEach(g => allGenres.add(g)));
-  const sel = document.getElementById("genre-select");
+  const sel  = document.getElementById("genre-select");
   const prev = genreFilter;
   sel.innerHTML = `<option value="all">${t("allGenres")}</option>` +
     [...allGenres].sort().map(g =>
@@ -249,53 +302,46 @@ function startListening() {
   });
 }
 
-async function addMovie(movie) {
-  await setDoc(doc(db, "movies", String(movie.tmdbId)), {
-    ...movie, status: "to_watch",
+async function addItem(item) {
+  const key = docKey(item.mediaType, item.tmdbId);
+  await setDoc(doc(db, "movies", key), {
+    ...item, status: "to_watch",
     addedBy: currentUser.email, addedAt: serverTimestamp(),
     watchedAt: null, rating: null,
   });
 }
 
-// Marque comme vu ET ouvre le popup de note
-async function markWatched(tmdbId, movieTitle) {
-  await updateDoc(doc(db,"movies",String(tmdbId)), {
-    status: "watched", watchedAt: serverTimestamp()
-  });
+async function markWatched(key, title) {
+  await updateDoc(doc(db,"movies",key), { status:"watched", watchedAt: serverTimestamp() });
   closeModal();
-  showRatingPopup(tmdbId, movieTitle);
+  showRatingPopup(key, title);
 }
 
-async function markToWatch(tmdbId) {
-  await updateDoc(doc(db,"movies",String(tmdbId)), {
-    status: "to_watch", watchedAt: null, rating: null
-  });
+async function markToWatch(key) {
+  await updateDoc(doc(db,"movies",key), { status:"to_watch", watchedAt: null, rating: null });
 }
 
-// Note partagée — un seul champ `rating` pour tout le monde
-async function saveRating(tmdbId, value) {
-  await updateDoc(doc(db,"movies",String(tmdbId)), { rating: value });
+async function saveRating(key, value) {
+  await updateDoc(doc(db,"movies",key), { rating: value });
 }
 
-async function removeMovie(id) {
-  await deleteDoc(doc(db,"movies",String(id)));
+async function removeItem(key) {
+  await deleteDoc(doc(db,"movies",key));
 }
 
 // ─────────────────────────────────────────
 //  SMILEY RATING POPUP
 // ─────────────────────────────────────────
-function showRatingPopup(tmdbId, movieTitle) {
-  // Crée le popup dynamiquement
+function showRatingPopup(key, title) {
   const existing = document.getElementById("rating-popup");
   if (existing) existing.remove();
-
   const popup = document.createElement("div");
   popup.id = "rating-popup";
   popup.innerHTML = `
     <div class="rating-popup-backdrop"></div>
     <div class="rating-popup-box">
       <h3>${t("ratingPopupTitle")}</h3>
-      <p>${t("ratingPopupSub", movieTitle)}</p>
+      <p>${t("ratingPopupSub", title)}</p>
       <div class="rating-popup-smileys">
         ${SMILEYS.map(s => `
           <button class="smiley-btn" data-val="${s.value}">
@@ -305,44 +351,48 @@ function showRatingPopup(tmdbId, movieTitle) {
       </div>
       <button class="rating-popup-skip">${t("ratingPopupSkip")}</button>
     </div>`;
-
   document.body.appendChild(popup);
-
-  // Clic sur un smiley → sauvegarde et ferme
   popup.querySelectorAll(".smiley-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
-      await saveRating(tmdbId, Number(btn.dataset.val));
+      await saveRating(key, Number(btn.dataset.val));
       popup.remove();
     });
   });
-
-  // Passer
   popup.querySelector(".rating-popup-skip").addEventListener("click", () => popup.remove());
   popup.querySelector(".rating-popup-backdrop").addEventListener("click", () => popup.remove());
 }
 
 // ─────────────────────────────────────────
-//  TMDB
+//  TMDB — SEARCH (films + séries en parallèle)
 // ─────────────────────────────────────────
 const TMDB_BASE   = "https://api.themoviedb.org/3";
 const TMDB_IMG    = "https://image.tmdb.org/t/p/w500";
 const TMDB_IMG_SM = "https://image.tmdb.org/t/p/w185";
 
-async function searchTMDB(q) {
-  const r = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&language=${t("tmdbLang")}`);
-  return (await r.json()).results || [];
-}
-async function getMovieDetails(id) {
+async function searchBoth(q) {
   const lang = t("tmdbLang");
-  const [details, credits, videos] = await Promise.all([
-    fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
-    fetch(`${TMDB_BASE}/movie/${id}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
-    fetch(`${TMDB_BASE}/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+  const [movRes, tvRes] = await Promise.all([
+    fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&language=${lang}`).then(r=>r.json()),
+    fetch(`${TMDB_BASE}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&language=${lang}`).then(r=>r.json()),
   ]);
-  let vids = videos.results || [];
+  // Mélange et trie par popularité
+  const movies = (movRes.results||[]).map(m => ({...m, _type:"movie"}));
+  const shows  = (tvRes.results||[]).map(s  => ({...s, _type:"tv"}));
+  return [...movies, ...shows].sort((a,b) => (b.popularity||0)-(a.popularity||0));
+}
+
+async function getDetails(mediaType, tmdbId) {
+  const lang = t("tmdbLang");
+  const base = mediaType === "tv" ? "tv" : "movie";
+  const [details, credits, videos] = await Promise.all([
+    fetch(`${TMDB_BASE}/${base}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+    fetch(`${TMDB_BASE}/${base}/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+    fetch(`${TMDB_BASE}/${base}/${tmdbId}/videos?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+  ]);
+  let vids = videos.results||[];
   if (!vids.length) {
-    const fb = await fetch(`${TMDB_BASE}/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`).then(r=>r.json());
-    vids = fb.results || [];
+    const fb = await fetch(`${TMDB_BASE}/${base}/${tmdbId}/videos?api_key=${TMDB_API_KEY}&language=en-US`).then(r=>r.json());
+    vids = fb.results||[];
   }
   return { details, credits, videoResults: vids };
 }
@@ -363,52 +413,64 @@ async function doSearch() {
   const q = searchInput.value.trim(); if (!q) return;
   searchResults.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text2)">${t("searching")}</div>`;
   searchResults.classList.remove("hidden");
-  const results = await searchTMDB(q);
+  const results = await searchBoth(q);
   if (!results.length) {
     searchResults.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text2)">${t("noResults")}</div>`;
     return;
   }
-  searchResults.innerHTML = results.slice(0,8).map(m => {
-    const already = !!movies[String(m.id)];
-    const year    = m.release_date?.slice(0,4) || "—";
-    const poster  = m.poster_path
-      ? `<img src="${TMDB_IMG_SM}${m.poster_path}" alt="${escHtml(m.title)}">`
-      : `<div class="sr-poster-placeholder">🎬</div>`;
-    return `<div class="search-result-item">
+  searchResults.innerHTML = results.slice(0,10).map(m => {
+    const mtype  = m._type;
+    const key    = docKey(mtype, m.id);
+    const already= !!movies[key];
+    const title  = mtype === "tv" ? m.name  : m.title;
+    const year   = mtype === "tv" ? m.first_air_date?.slice(0,4) : m.release_date?.slice(0,4);
+    const badge  = mtype === "tv"
+      ? `<span class="type-badge tv">📺 ${t("badgeSerie")}</span>`
+      : `<span class="type-badge movie">🎬 ${t("badgeMovie")}</span>`;
+    const poster = m.poster_path
+      ? `<img src="${TMDB_IMG_SM}${m.poster_path}" alt="${escHtml(title)}">`
+      : `<div class="sr-poster-placeholder">${mtype==="tv"?"📺":"🎬"}</div>`;
+    return `<div class="search-result-item"
+        data-id="${m.id}" data-type="${mtype}"
+        data-title="${encodeURIComponent(title||"")}"
+        data-poster="${m.poster_path||""}"
+        data-year="${year||""}"
+        data-overview="${encodeURIComponent(m.overview||"")}">
       ${poster}
       <div class="sr-info">
-        <div class="sr-title">${escHtml(m.title)}</div>
-        <div class="sr-year">${year}</div>
+        <div class="sr-title">${escHtml(title)}</div>
+        <div class="sr-year">${badge} ${year||"—"}</div>
       </div>
-      <button class="sr-add ${already?"added":""}"
-        data-id="${m.id}" data-title="${encodeURIComponent(m.title)}"
-        data-poster="${m.poster_path||""}" data-year="${year}"
-        data-overview="${encodeURIComponent(m.overview||"")}"
-        ${already?"disabled":""}>
+      <button class="sr-add ${already?"added":""}" data-key="${key}" ${already?"disabled":""}>
         ${already ? t("addedBtn") : t("addBtn")}
       </button>
     </div>`;
   }).join("");
 
+  // Ajouter depuis les résultats
   searchResults.querySelectorAll(".sr-add:not(.added)").forEach(btn => {
     btn.addEventListener("click", async e => {
       e.stopPropagation();
-      const {id, title, poster, year, overview} = btn.dataset;
-      const lang    = t("tmdbLang");
-      const details = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
-      await addMovie({
-        tmdbId: Number(id), title: decodeURIComponent(title),
+      const row  = btn.closest(".search-result-item");
+      const { id, type, title, poster, year, overview } = row.dataset;
+      const lang = t("tmdbLang");
+      const d    = await fetch(`${TMDB_BASE}/${type}/${id}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
+      await addItem({
+        tmdbId: Number(id), mediaType: type,
+        title: decodeURIComponent(title),
         posterPath: poster, releaseYear: Number(year)||null,
         overview: decodeURIComponent(overview),
-        genres: (details.genres||[]).map(g=>g.name),
+        genres: (d.genres||[]).map(g=>g.name),
       });
       btn.textContent = t("addedBtn"); btn.classList.add("added"); btn.disabled = true;
     });
   });
-  searchResults.querySelectorAll(".search-result-item").forEach(item => {
-    item.addEventListener("click", e => {
+
+  // Clic sur la ligne → modal
+  searchResults.querySelectorAll(".search-result-item").forEach(row => {
+    row.addEventListener("click", e => {
       if (e.target.closest(".sr-add")) return;
-      openModal(Number(item.querySelector(".sr-add").dataset.id));
+      openModal(row.dataset.type, Number(row.dataset.id));
     });
   });
 }
@@ -418,14 +480,15 @@ async function doSearch() {
 // ─────────────────────────────────────────
 function sortAndFilter(list) {
   let out = [...list];
-  if (genreFilter !== "all") out = out.filter(m => (m.genres||[]).includes(genreFilter));
+  if (mediaFilter !== "all")  out = out.filter(m => m.mediaType === mediaFilter);
+  if (genreFilter !== "all")  out = out.filter(m => (m.genres||[]).includes(genreFilter));
   switch (sortMode) {
-    case "date_asc":   out.sort((a,b) => (a.addedAt?.seconds||0)-(b.addedAt?.seconds||0)); break;
-    case "date_desc":  out.sort((a,b) => (b.addedAt?.seconds||0)-(a.addedAt?.seconds||0)); break;
-    case "alpha_az":   out.sort((a,b) => a.title.localeCompare(b.title)); break;
-    case "alpha_za":   out.sort((a,b) => b.title.localeCompare(a.title)); break;
-    case "smiley_desc":out.sort((a,b) => (b.rating||0)-(a.rating||0)); break;
-    case "smiley_asc": out.sort((a,b) => (a.rating||0)-(b.rating||0)); break;
+    case "date_asc":   out.sort((a,b)=>(a.addedAt?.seconds||0)-(b.addedAt?.seconds||0)); break;
+    case "date_desc":  out.sort((a,b)=>(b.addedAt?.seconds||0)-(a.addedAt?.seconds||0)); break;
+    case "alpha_az":   out.sort((a,b)=>a.title.localeCompare(b.title)); break;
+    case "alpha_za":   out.sort((a,b)=>b.title.localeCompare(a.title)); break;
+    case "smiley_desc":out.sort((a,b)=>(b.rating||0)-(a.rating||0)); break;
+    case "smiley_asc": out.sort((a,b)=>(a.rating||0)-(b.rating||0)); break;
   }
   return out;
 }
@@ -452,76 +515,87 @@ function renderGrid(status, list) {
     </div>`; return;
   }
   grid.innerHTML = list.map(m => {
+    const key    = docKey(m.mediaType, m.tmdbId);
     const poster = m.posterPath
       ? `<img src="${TMDB_IMG}${m.posterPath}" alt="${escHtml(m.title)}" loading="lazy">`
-      : `<div class="no-poster">🎬</div>`;
+      : `<div class="no-poster">${m.mediaType==="tv"?"📺":"🎬"}</div>`;
     const smiley = m.rating ? SMILEYS.find(s=>s.value===m.rating) : null;
     const emojiHtml = smiley ? `<span class="card-emoji" title="${smiley[currentLang]}">${smiley.emoji}</span>` : "";
-    return `<div class="movie-card" data-id="${m.tmdbId}">
+    const typeDot = m.mediaType === "tv"
+      ? `<span class="card-type-dot tv">📺</span>`
+      : `<span class="card-type-dot movie">🎬</span>`;
+    return `<div class="movie-card" data-key="${key}" data-type="${m.mediaType}" data-id="${m.tmdbId}">
       ${poster}
       <div class="card-body">
         <div class="card-title">${escHtml(m.title)}</div>
-        <div class="card-meta"><span>${m.releaseYear||"—"}</span>${emojiHtml}</div>
+        <div class="card-meta">
+          <span>${m.releaseYear||"—"} ${typeDot}</span>${emojiHtml}
+        </div>
       </div>
     </div>`;
   }).join("");
   grid.querySelectorAll(".movie-card").forEach(card =>
-    card.addEventListener("click", () => openModal(Number(card.dataset.id))));
+    card.addEventListener("click", () => openModal(card.dataset.type, Number(card.dataset.id))));
 }
 
 // ─────────────────────────────────────────
 //  MODAL
 // ─────────────────────────────────────────
-async function openModal(tmdbId) {
+async function openModal(mediaType, tmdbId) {
   const modal   = document.getElementById("modal");
   const content = document.getElementById("modal-content");
   modal.classList.remove("hidden");
   content.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text2)">${t("loading")}</div>`;
 
-  const inCollection = movies[String(tmdbId)];
-  const { details, credits, videoResults } = await getMovieDetails(tmdbId);
+  const key          = docKey(mediaType, tmdbId);
+  const inCollection = movies[key];
+  const { details, credits, videoResults } = await getDetails(mediaType, tmdbId);
 
-  const cast     = (credits.cast||[]).slice(0,5).map(a=>a.name).join(", ");
-  const director = (credits.crew||[]).find(c=>c.job==="Director");
-  const trailer  = videoResults.find(v=>v.site==="YouTube"&&v.type==="Trailer");
-  const year     = details.release_date?.slice(0,4)||"—";
-  const runtime  = details.runtime ? `${details.runtime} min` : "";
-  const genres   = (details.genres||[]).map(g=>g.name).join(", ");
+  // Normalise titre + année selon le type
+  const title   = mediaType === "tv" ? details.name        : details.title;
+  const year    = mediaType === "tv" ? details.first_air_date?.slice(0,4) : details.release_date?.slice(0,4);
+  const metaExtra = mediaType === "tv"
+    ? (details.number_of_seasons ? t("seasons", details.number_of_seasons) : "")
+    : (details.runtime ? `${details.runtime} min` : "");
 
-  const posterHtml = details.poster_path
-    ? `<img src="${TMDB_IMG}${details.poster_path}" alt="${escHtml(details.title)}">`
-    : `<div class="no-poster">🎬</div>`;
+  const genres  = (details.genres||[]).map(g=>g.name).join(", ");
+  const cast    = (credits.cast||[]).slice(0,5).map(a=>a.name).join(", ");
+  const trailer = videoResults.find(v=>v.site==="YouTube"&&v.type==="Trailer");
 
-  // ── Note actuelle (film vu) ──
-  let ratingHtml = "";
-  if (inCollection?.status === "watched") {
-    const curSmiley = inCollection.rating ? SMILEYS.find(s=>s.value===inCollection.rating) : null;
-    if (curSmiley) {
-      // Affiche la note + bouton modifier
-      ratingHtml = `
-        <div class="modal-section-title">${t("yourRating")}</div>
-        <div class="smiley-rating" id="modal-smiley-rating">
-          ${SMILEYS.map(s => `
-            <button class="smiley-btn ${s.value===inCollection.rating?"active":""}" data-val="${s.value}">
-              <span class="smiley-icon">${s.emoji}</span>
-              <span class="smiley-label">${s[currentLang]}</span>
-            </button>`).join("")}
-        </div>`;
-    } else {
-      // Pas encore noté → affiche les smileys directement
-      ratingHtml = `
-        <div class="modal-section-title">${t("yourRating")}</div>
-        <div class="smiley-rating" id="modal-smiley-rating">
-          ${SMILEYS.map(s => `
-            <button class="smiley-btn" data-val="${s.value}">
-              <span class="smiley-icon">${s.emoji}</span>
-              <span class="smiley-label">${s[currentLang]}</span>
-            </button>`).join("")}
-        </div>`;
-    }
+  // Réalisateur (film) ou créateur (série)
+  let creatorHtml = "";
+  if (mediaType === "tv") {
+    const creators = (details.created_by||[]).map(c=>c.name).join(", ");
+    if (creators) creatorHtml = `<div class="modal-cast"><strong>${t("creator")} :</strong> ${escHtml(creators)}</div>`;
+  } else {
+    const director = (credits.crew||[]).find(c=>c.job==="Director");
+    if (director) creatorHtml = `<div class="modal-cast"><strong>${t("director")} :</strong> ${escHtml(director.name)}</div>`;
   }
 
-  // ── Boutons d'action ──
+  const posterHtml = details.poster_path
+    ? `<img src="${TMDB_IMG}${details.poster_path}" alt="${escHtml(title)}">`
+    : `<div class="no-poster">${mediaType==="tv"?"📺":"🎬"}</div>`;
+
+  // Badge type
+  const typeBadge = mediaType === "tv"
+    ? `<span class="type-badge tv" style="display:inline-block;margin-bottom:8px">📺 ${t("badgeSerie")}</span>`
+    : `<span class="type-badge movie" style="display:inline-block;margin-bottom:8px">🎬 ${t("badgeMovie")}</span>`;
+
+  // Note smiley
+  let ratingHtml = "";
+  if (inCollection?.status === "watched") {
+    ratingHtml = `
+      <div class="modal-section-title">${t("yourRating")}</div>
+      <div class="smiley-rating" id="modal-smiley-rating">
+        ${SMILEYS.map(s => `
+          <button class="smiley-btn ${s.value===(inCollection.rating||0)?"active":""}" data-val="${s.value}">
+            <span class="smiley-icon">${s.emoji}</span>
+            <span class="smiley-label">${s[currentLang]}</span>
+          </button>`).join("")}
+      </div>`;
+  }
+
+  // Boutons
   let actions = "";
   if (inCollection) {
     actions += inCollection.status==="to_watch"
@@ -539,9 +613,10 @@ async function openModal(tmdbId) {
     <div class="modal-inner">
       <div class="modal-poster">${posterHtml}</div>
       <div class="modal-info">
-        <div class="modal-title">${escHtml(details.title)}</div>
-        <div class="modal-meta">${year}${runtime?" · "+runtime:""}${genres?" · "+genres:""}</div>
-        ${director?`<div class="modal-cast"><strong>${t("director")} :</strong> ${escHtml(director.name)}</div>`:""}
+        ${typeBadge}
+        <div class="modal-title">${escHtml(title)}</div>
+        <div class="modal-meta">${year||"—"}${metaExtra?" · "+metaExtra:""}${genres?" · "+genres:""}</div>
+        ${creatorHtml}
         ${cast?`<div class="modal-cast"><strong>${t("cast")} :</strong> ${escHtml(cast)}</div>`:""}
         ${details.overview?`<div class="modal-overview">${escHtml(details.overview)}</div>`:""}
         ${ratingHtml}
@@ -549,34 +624,30 @@ async function openModal(tmdbId) {
       </div>
     </div>`;
 
-  // Smileys cliquables dans la modal (modifier la note)
+  // Smileys interactifs dans la modal
   document.querySelectorAll("#modal-smiley-rating .smiley-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const val = Number(btn.dataset.val);
       document.querySelectorAll("#modal-smiley-rating .smiley-btn").forEach(b =>
-        b.classList.toggle("active", Number(b.dataset.val) === val));
-      await saveRating(tmdbId, val);
+        b.classList.toggle("active", Number(b.dataset.val)===val));
+      await saveRating(key, val);
     });
   });
 
   document.getElementById("modal-add")?.addEventListener("click", async () => {
     const lang = t("tmdbLang");
-    const d = await fetch(`${TMDB_BASE}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
-    await addMovie({
-      tmdbId: details.id, title: details.title,
+    const d = await fetch(`${TMDB_BASE}/${mediaType==="tv"?"tv":"movie"}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
+    await addItem({
+      tmdbId, mediaType, title,
       posterPath: details.poster_path||"", releaseYear: Number(year)||null,
       overview: details.overview||"", genres: (d.genres||[]).map(g=>g.name),
     });
     closeModal();
   });
-  document.getElementById("modal-watched")?.addEventListener("click", () => {
-    markWatched(tmdbId, details.title);
-  });
-  document.getElementById("modal-to-watch")?.addEventListener("click", async () => {
-    await markToWatch(tmdbId); closeModal();
-  });
+  document.getElementById("modal-watched")?.addEventListener("click", () => markWatched(key, title));
+  document.getElementById("modal-to-watch")?.addEventListener("click", async () => { await markToWatch(key); closeModal(); });
   document.getElementById("modal-remove")?.addEventListener("click", async () => {
-    if (confirm(t("confirmRemove", details.title))) { await removeMovie(tmdbId); closeModal(); }
+    if (confirm(t("confirmRemove", title))) { await removeItem(key); closeModal(); }
   });
 }
 
