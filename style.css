@@ -286,3 +286,27 @@ header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spaci
   .smiley-rating { gap: 6px; }
   .smiley-btn { padding: 8px 10px; }
 }
+
+/* ── MEDIA TYPE FILTER (Films / Séries) ── */
+.media-filter {
+  display: flex; gap: 4px;
+}
+.mf-btn {
+  background: var(--bg2); color: var(--text2);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; font-family: 'DM Sans', sans-serif;
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.mf-btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+.mf-btn.active { background: var(--bg3); color: var(--text); border-color: rgba(255,255,255,.25); }
+
+/* ── TYPE BADGES ── */
+.type-badge {
+  display: inline-block; font-size: 11px; padding: 2px 8px;
+  border-radius: 20px; font-weight: 500; vertical-align: middle;
+}
+.type-badge.movie { background: rgba(230,57,70,.15); color: #e63946; }
+.type-badge.tv    { background: rgba(72,149,239,.15); color: #4895ef; }
+
+/* Badge sur les cartes */
+.card-type-dot { font-size: 12px; }
