@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────
-//  CONFIGURATION — remplace les valeurs ici
+//  CONFIGURATION
 // ─────────────────────────────────────────
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBDdJ82azr6aemBVd3wCi2QBUU_2K4ljco",
@@ -9,15 +9,11 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "1053898593883",
   appId: "1:1053898593883:web:9eb152c29af0d4f075d17e"
 };
-
-const TMDB_API_KEY = "dd27e4c668d68859a2383ff890147522"; // ← colle ta clé TMDB ici
-
-// Seuls ces 2 emails peuvent accéder à l'app
+const TMDB_API_KEY   = "dd27e4c668d68859a2383ff890147522";
 const ALLOWED_EMAILS = [
-  "jean.pierre.gonzalez@gmail.com",   // ← remplace
-  "celya31@gmail.com"    // ← remplace
+  "jean.pierre.gonzalez@gmail.com",
+  "celya31@gmail.com"
 ];
-
 
 // ─────────────────────────────────────────
 //  SMILEYS
@@ -27,6 +23,19 @@ const SMILEYS = [
   { value: 2, emoji: "😐", fr: "Sans plus",  es: "Regular",       en: "It was ok"      },
   { value: 3, emoji: "😊", fr: "Aimé",       es: "Me gustó",     en: "Liked it"       },
   { value: 4, emoji: "🤩", fr: "Adoré",      es: "¡Me encantó!", en: "Loved it!"      },
+];
+
+// ─────────────────────────────────────────
+//  DURÉE — tranches de filtre
+// ─────────────────────────────────────────
+const DURATION_FILTERS = [
+  { value: "all",  fr: "Toutes durées",  es: "Todas",         en: "All durations", min: 0,   max: Infinity },
+  { value: "60",   fr: "< 1h00",         es: "< 1h00",        en: "< 1h00",        min: 0,   max: 60       },
+  { value: "90",   fr: "< 1h30",         es: "< 1h30",        en: "< 1h30",        min: 0,   max: 90       },
+  { value: "120",  fr: "< 2h00",         es: "< 2h00",        en: "< 2h00",        min: 0,   max: 120      },
+  { value: "150",  fr: "< 2h30",         es: "< 2h30",        en: "< 2h30",        min: 0,   max: 150      },
+  { value: "180",  fr: "< 3h00",         es: "< 3h00",        en: "< 3h00",        min: 0,   max: 180      },
+  { value: "180+", fr: "> 3h00",         es: "> 3h00",        en: "> 3h00",        min: 180, max: Infinity },
 ];
 
 // ─────────────────────────────────────────
@@ -56,6 +65,8 @@ const I18N = {
     ratingPopupSub:(title)=>`Que pensez-vous de "${title}" ?`,
     ratingPopupSkip:"Passer",
     yourRating:"Note :",
+    duration:"Durée", durationFilter:"Durée :",
+    episodeDuration:(n)=>`~${n} min/ép.`,
     tmdbLang:"fr-FR",
   },
   es: {
@@ -81,6 +92,8 @@ const I18N = {
     ratingPopupSub:(title)=>`¿Qué opinas de "${title}"?`,
     ratingPopupSkip:"Omitir",
     yourRating:"Nota :",
+    duration:"Duración", durationFilter:"Duración :",
+    episodeDuration:(n)=>`~${n} min/ep.`,
     tmdbLang:"es-ES",
   },
   en: {
@@ -106,6 +119,8 @@ const I18N = {
     ratingPopupSub:(title)=>`What did you think of "${title}"?`,
     ratingPopupSkip:"Skip",
     yourRating:"Rating :",
+    duration:"Duration", durationFilter:"Duration:",
+    episodeDuration:(n)=>`~${n} min/ep.`,
     tmdbLang:"en-US",
   },
 };
@@ -128,33 +143,36 @@ const gProvider = new GoogleAuthProvider();
 // ─────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────
-let movies      = {};                                     // clé : "{mediaType}_{tmdbId}"
-let currentTab  = "to_watch";
-let currentLang = localStorage.getItem("lang")   || "fr";
-let viewMode    = localStorage.getItem("view")   || "gallery";
-let sortMode    = localStorage.getItem("sort")   || "date_desc";
-let genreFilter = "all";
-let mediaFilter = "all";                                  // "all" | "movie" | "tv"
-let unsubscribe = null;
-let currentUser = null;
+let movies         = {};
+let currentTab     = "to_watch";
+let currentLang    = localStorage.getItem("lang")     || "fr";
+let viewMode       = localStorage.getItem("view")     || "gallery";
+let sortMode       = localStorage.getItem("sort")     || "date_desc";
+let genreFilter    = "all";
+let mediaFilter    = "all";
+let durationFilter = "all";
+let unsubscribe    = null;
+let currentUser    = null;
 
 // ─────────────────────────────────────────
-//  HELPERS TMDB — films vs séries
+//  UTILS DURÉE
 // ─────────────────────────────────────────
-// Normalise un résultat TMDB (movie ou tv) en objet uniforme
-function normalizeTmdb(item, mediaType) {
-  return {
-    tmdbId:    item.id,
-    mediaType, // "movie" | "tv"
-    title:     mediaType === "tv" ? item.name        : item.title,
-    year:      mediaType === "tv" ? item.first_air_date?.slice(0,4) : item.release_date?.slice(0,4),
-    posterPath:item.poster_path || "",
-    overview:  item.overview   || "",
-  };
+function formatRuntime(minutes) {
+  if (!minutes || minutes <= 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h${m > 0 ? String(m).padStart(2,"0") : ""}` : `${m}min`;
 }
 
-// Clé unique Firestore : combine type + id pour éviter les collisions
-function docKey(mediaType, tmdbId) { return `${mediaType}_${tmdbId}`; }
+function runtimeMatchesDurationFilter(runtime, mediaType) {
+  if (durationFilter === "all") return true;
+  // Pour les séries on n'applique le filtre que si on a une durée d'épisode
+  if (!runtime || mediaType === "tv") return true;
+  const df = DURATION_FILTERS.find(d => d.value === durationFilter);
+  if (!df) return true;
+  if (durationFilter === "180+") return runtime > 180;
+  return runtime < df.max;
+}
 
 // ─────────────────────────────────────────
 //  I18N
@@ -177,6 +195,7 @@ function applyTranslations() {
     b.classList.toggle("active", b.dataset.lang === currentLang));
   buildSortSelect();
   buildMediaFilter();
+  buildDurationFilter();
   renderLists();
 }
 function setLang(lang) { currentLang = lang; localStorage.setItem("lang", lang); applyTranslations(); }
@@ -203,17 +222,16 @@ document.getElementById("sort-select").addEventListener("change", e => {
 });
 
 // ─────────────────────────────────────────
-//  MEDIA TYPE FILTER (Films / Séries / Tout)
+//  MEDIA FILTER
 // ─────────────────────────────────────────
 function buildMediaFilter() {
-  const sel = document.getElementById("genre-select");
-  // On insère les boutons Films/Séries AVANT le select genre si pas déjà fait
+  const toolbarLeft = document.querySelector(".toolbar-left");
   let mf = document.getElementById("media-filter");
   if (!mf) {
     mf = document.createElement("div");
     mf.id = "media-filter";
     mf.className = "media-filter";
-    sel.parentNode.insertBefore(mf, sel);
+    toolbarLeft.insertBefore(mf, toolbarLeft.firstChild);
   }
   mf.innerHTML = [
     ["all",   t("filterAll")],
@@ -229,6 +247,23 @@ function buildMediaFilter() {
       renderLists();
     });
   });
+}
+
+// ─────────────────────────────────────────
+//  DURATION FILTER
+// ─────────────────────────────────────────
+function buildDurationFilter() {
+  let df = document.getElementById("duration-filter-select");
+  if (!df) {
+    df = document.createElement("select");
+    df.id = "duration-filter-select";
+    df.className = "tb-select";
+    document.querySelector(".toolbar-left").appendChild(df);
+    df.addEventListener("change", e => { durationFilter = e.target.value; renderLists(); });
+  }
+  df.innerHTML = DURATION_FILTERS.map(d =>
+    `<option value="${d.value}" ${durationFilter===d.value?"selected":""}>${d[currentLang]}</option>`
+  ).join("");
 }
 
 // ─────────────────────────────────────────
@@ -302,6 +337,8 @@ function startListening() {
   });
 }
 
+function docKey(mediaType, tmdbId) { return `${mediaType}_${tmdbId}`; }
+
 async function addItem(item) {
   const key = docKey(item.mediaType, item.tmdbId);
   await setDoc(doc(db, "movies", key), {
@@ -363,11 +400,16 @@ function showRatingPopup(key, title) {
 }
 
 // ─────────────────────────────────────────
-//  TMDB — SEARCH (films + séries en parallèle)
+//  TMDB
 // ─────────────────────────────────────────
-const TMDB_BASE   = "https://api.themoviedb.org/3";
-const TMDB_IMG    = "https://image.tmdb.org/t/p/w500";
-const TMDB_IMG_SM = "https://image.tmdb.org/t/p/w185";
+const TMDB_BASE     = "https://api.themoviedb.org/3";
+const TMDB_IMG      = "https://image.tmdb.org/t/p/w500";
+const TMDB_IMG_SM   = "https://image.tmdb.org/t/p/w185";
+const TMDB_BASE_URL = "https://www.themoviedb.org"; // lien vers la fiche TMDB
+
+function tmdbPageUrl(mediaType, tmdbId) {
+  return `${TMDB_BASE_URL}/${mediaType === "tv" ? "tv" : "movie"}/${tmdbId}`;
+}
 
 async function searchBoth(q) {
   const lang = t("tmdbLang");
@@ -375,10 +417,9 @@ async function searchBoth(q) {
     fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&language=${lang}`).then(r=>r.json()),
     fetch(`${TMDB_BASE}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&language=${lang}`).then(r=>r.json()),
   ]);
-  // Mélange et trie par popularité
-  const movies = (movRes.results||[]).map(m => ({...m, _type:"movie"}));
-  const shows  = (tvRes.results||[]).map(s  => ({...s, _type:"tv"}));
-  return [...movies, ...shows].sort((a,b) => (b.popularity||0)-(a.popularity||0));
+  const movs  = (movRes.results||[]).map(m => ({...m, _type:"movie"}));
+  const shows = (tvRes.results||[]).map(s  => ({...s, _type:"tv"}));
+  return [...movs, ...shows].sort((a,b) => (b.popularity||0)-(a.popularity||0));
 }
 
 async function getDetails(mediaType, tmdbId) {
@@ -441,32 +482,36 @@ async function doSearch() {
         <div class="sr-title">${escHtml(title)}</div>
         <div class="sr-year">${badge} ${year||"—"}</div>
       </div>
-      <button class="sr-add ${already?"added":""}" data-key="${key}" ${already?"disabled":""}>
+      <button class="sr-add ${already?"added":""}" ${already?"disabled":""}>
         ${already ? t("addedBtn") : t("addBtn")}
       </button>
     </div>`;
   }).join("");
 
-  // Ajouter depuis les résultats
   searchResults.querySelectorAll(".sr-add:not(.added)").forEach(btn => {
     btn.addEventListener("click", async e => {
       e.stopPropagation();
       const row  = btn.closest(".search-result-item");
       const { id, type, title, poster, year, overview } = row.dataset;
       const lang = t("tmdbLang");
-      const d    = await fetch(`${TMDB_BASE}/${type}/${id}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
+      const base = type === "tv" ? "tv" : "movie";
+      const d    = await fetch(`${TMDB_BASE}/${base}/${id}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
+      // Récupère runtime selon le type
+      const runtime = type === "tv"
+        ? ((d.episode_run_time||[])[0] || null)   // durée moy. d'un épisode
+        : (d.runtime || null);
       await addItem({
         tmdbId: Number(id), mediaType: type,
         title: decodeURIComponent(title),
         posterPath: poster, releaseYear: Number(year)||null,
         overview: decodeURIComponent(overview),
         genres: (d.genres||[]).map(g=>g.name),
+        runtime,
       });
       btn.textContent = t("addedBtn"); btn.classList.add("added"); btn.disabled = true;
     });
   });
 
-  // Clic sur la ligne → modal
   searchResults.querySelectorAll(".search-result-item").forEach(row => {
     row.addEventListener("click", e => {
       if (e.target.closest(".sr-add")) return;
@@ -482,6 +527,10 @@ function sortAndFilter(list) {
   let out = [...list];
   if (mediaFilter !== "all")  out = out.filter(m => m.mediaType === mediaFilter);
   if (genreFilter !== "all")  out = out.filter(m => (m.genres||[]).includes(genreFilter));
+  // Filtre durée (films uniquement — pour les séries on passe)
+  if (durationFilter !== "all") {
+    out = out.filter(m => runtimeMatchesDurationFilter(m.runtime, m.mediaType));
+  }
   switch (sortMode) {
     case "date_asc":   out.sort((a,b)=>(a.addedAt?.seconds||0)-(b.addedAt?.seconds||0)); break;
     case "date_desc":  out.sort((a,b)=>(b.addedAt?.seconds||0)-(a.addedAt?.seconds||0)); break;
@@ -521,15 +570,23 @@ function renderGrid(status, list) {
       : `<div class="no-poster">${m.mediaType==="tv"?"📺":"🎬"}</div>`;
     const smiley = m.rating ? SMILEYS.find(s=>s.value===m.rating) : null;
     const emojiHtml = smiley ? `<span class="card-emoji" title="${smiley[currentLang]}">${smiley.emoji}</span>` : "";
-    const typeDot = m.mediaType === "tv"
-      ? `<span class="card-type-dot tv">📺</span>`
-      : `<span class="card-type-dot movie">🎬</span>`;
+    const typeDot   = m.mediaType==="tv"
+      ? `<span class="card-type-dot">📺</span>`
+      : `<span class="card-type-dot">🎬</span>`;
+    // Durée sur la carte
+    let runtimeHtml = "";
+    if (m.runtime) {
+      runtimeHtml = m.mediaType === "tv"
+        ? `<span class="card-runtime">${t("episodeDuration", m.runtime)}</span>`
+        : `<span class="card-runtime">⏱ ${formatRuntime(m.runtime)}</span>`;
+    }
     return `<div class="movie-card" data-key="${key}" data-type="${m.mediaType}" data-id="${m.tmdbId}">
       ${poster}
       <div class="card-body">
         <div class="card-title">${escHtml(m.title)}</div>
         <div class="card-meta">
-          <span>${m.releaseYear||"—"} ${typeDot}</span>${emojiHtml}
+          <span class="card-meta-left">${m.releaseYear||"—"} ${typeDot}</span>
+          <span class="card-meta-right">${runtimeHtml}${emojiHtml}</span>
         </div>
       </div>
     </div>`;
@@ -551,18 +608,24 @@ async function openModal(mediaType, tmdbId) {
   const inCollection = movies[key];
   const { details, credits, videoResults } = await getDetails(mediaType, tmdbId);
 
-  // Normalise titre + année selon le type
-  const title   = mediaType === "tv" ? details.name        : details.title;
+  const title   = mediaType === "tv" ? details.name  : details.title;
   const year    = mediaType === "tv" ? details.first_air_date?.slice(0,4) : details.release_date?.slice(0,4);
-  const metaExtra = mediaType === "tv"
-    ? (details.number_of_seasons ? t("seasons", details.number_of_seasons) : "")
-    : (details.runtime ? `${details.runtime} min` : "");
-
   const genres  = (details.genres||[]).map(g=>g.name).join(", ");
   const cast    = (credits.cast||[]).slice(0,5).map(a=>a.name).join(", ");
   const trailer = videoResults.find(v=>v.site==="YouTube"&&v.type==="Trailer");
 
-  // Réalisateur (film) ou créateur (série)
+  // Durée / saisons
+  let metaExtra = "";
+  if (mediaType === "tv") {
+    const seasons = details.number_of_seasons;
+    const epRuntime = (details.episode_run_time||[])[0];
+    if (seasons) metaExtra += t("seasons", seasons);
+    if (epRuntime) metaExtra += (metaExtra ? " · " : "") + t("episodeDuration", epRuntime);
+  } else {
+    if (details.runtime) metaExtra = `⏱ ${formatRuntime(details.runtime)}`;
+  }
+
+  // Créateur / réalisateur
   let creatorHtml = "";
   if (mediaType === "tv") {
     const creators = (details.created_by||[]).map(c=>c.name).join(", ");
@@ -576,10 +639,18 @@ async function openModal(mediaType, tmdbId) {
     ? `<img src="${TMDB_IMG}${details.poster_path}" alt="${escHtml(title)}">`
     : `<div class="no-poster">${mediaType==="tv"?"📺":"🎬"}</div>`;
 
-  // Badge type
   const typeBadge = mediaType === "tv"
     ? `<span class="type-badge tv" style="display:inline-block;margin-bottom:8px">📺 ${t("badgeSerie")}</span>`
     : `<span class="type-badge movie" style="display:inline-block;margin-bottom:8px">🎬 ${t("badgeMovie")}</span>`;
+
+  // Lien TMDB
+  const tmdbLink = `<a class="tmdb-link" href="${tmdbPageUrl(mediaType, tmdbId)}" target="_blank" rel="noopener" title="Voir sur TMDB">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    TMDB
+  </a>`;
 
   // Note smiley
   let ratingHtml = "";
@@ -613,7 +684,10 @@ async function openModal(mediaType, tmdbId) {
     <div class="modal-inner">
       <div class="modal-poster">${posterHtml}</div>
       <div class="modal-info">
-        ${typeBadge}
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          ${typeBadge}
+          ${tmdbLink}
+        </div>
         <div class="modal-title">${escHtml(title)}</div>
         <div class="modal-meta">${year||"—"}${metaExtra?" · "+metaExtra:""}${genres?" · "+genres:""}</div>
         ${creatorHtml}
@@ -624,7 +698,7 @@ async function openModal(mediaType, tmdbId) {
       </div>
     </div>`;
 
-  // Smileys interactifs dans la modal
+  // Smileys interactifs
   document.querySelectorAll("#modal-smiley-rating .smiley-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const val = Number(btn.dataset.val);
@@ -636,11 +710,16 @@ async function openModal(mediaType, tmdbId) {
 
   document.getElementById("modal-add")?.addEventListener("click", async () => {
     const lang = t("tmdbLang");
-    const d = await fetch(`${TMDB_BASE}/${mediaType==="tv"?"tv":"movie"}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
+    const base = mediaType === "tv" ? "tv" : "movie";
+    const d = await fetch(`${TMDB_BASE}/${base}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
+    const runtime = mediaType === "tv"
+      ? ((d.episode_run_time||[])[0] || null)
+      : (d.runtime || null);
     await addItem({
       tmdbId, mediaType, title,
       posterPath: details.poster_path||"", releaseYear: Number(year)||null,
       overview: details.overview||"", genres: (d.genres||[]).map(g=>g.name),
+      runtime,
     });
     closeModal();
   });
