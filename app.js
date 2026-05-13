@@ -16,14 +16,13 @@ const ALLOWED_EMAILS = [
 ];
 
 // ─────────────────────────────────────────
-//  SMILEYS
+//  ÉTOILES — 4 niveaux (compatibles avec les anciennes notes smiley 1-4)
 // ─────────────────────────────────────────
-const SMILEYS = [
-  { value: 1, emoji: "😞", fr: "Pas aimé",   es: "No me gustó",  en: "Didn't like it" },
-  { value: 2, emoji: "😐", fr: "Sans plus",  es: "Regular",       en: "It was ok"      },
-  { value: 3, emoji: "😊", fr: "Aimé",       es: "Me gustó",     en: "Liked it"       },
-  { value: 4, emoji: "🤩", fr: "Adoré",      es: "¡Me encantó!", en: "Loved it!"      },
-];
+const STAR_LABELS = {
+  fr: ["", "Décevant", "Pas mal", "Bien", "Excellent"],
+  es: ["", "Decepcionante", "Regular", "Bien", "Excelente"],
+  en: ["", "Disappointing", "Not bad", "Good", "Excellent"],
+};
 
 // ─────────────────────────────────────────
 //  DURÉE
@@ -56,17 +55,18 @@ const I18N = {
     director:"Réalisateur·rice", cast:"Avec", creator:"Créé par",
     seasons:(n)=> n > 1 ? `${n} saisons` : `${n} saison`,
     emptyToWatch:"Aucun titre à voir pour l'instant", emptyWatched:"Aucun titre vu pour l'instant",
-    confirmRemove:(t)=>`Supprimer "${t}" de la liste ?`,
+    confirmRemove:(title)=>`Supprimer "${title}" de la liste ?`,
     unauthorizedAlert:"Accès non autorisé pour ce compte Gmail.",
     sortDateDesc:"Date ajout ↓", sortDateAsc:"Date ajout ↑",
     sortAlphaAZ:"A → Z", sortAlphaZA:"Z → A",
-    sortSmileyDesc:"Note ↓", sortSmileyAsc:"Note ↑",
+    sortStarDesc:"Note ↓", sortStarAsc:"Note ↑",
     allGenres:"Tous les genres",
     filterAll:"Tout", filterMovies:"🎬 Films", filterSeries:"📺 Séries",
     badgeMovie:"Film", badgeSerie:"Série",
-    ratingPopupTitle:"Vous avez aimé ?",
+    ratingPopupTitle:"Votre note ?",
     ratingPopupSub:(title)=>`Que pensez-vous de "${title}" ?`,
-    ratingPopupSkip:"Passer", yourRating:"Note :",
+    ratingPopupSkip:"Passer",
+    yourRating:"Votre note :",
     durationMin:"Durée min :", durationMax:"Durée max :",
     durationNoMin:"Pas de min", durationNoMax:"Pas de max",
     episodeDuration:(n)=>`~${n} min/ép.`,
@@ -86,17 +86,18 @@ const I18N = {
     director:"Director/a", cast:"Con", creator:"Creado por",
     seasons:(n)=> n > 1 ? `${n} temporadas` : `${n} temporada`,
     emptyToWatch:"No hay títulos por ver", emptyWatched:"No hay títulos vistos",
-    confirmRemove:(t)=>`¿Eliminar "${t}" de la lista?`,
+    confirmRemove:(title)=>`¿Eliminar "${title}" de la lista?`,
     unauthorizedAlert:"Acceso no autorizado para esta cuenta de Gmail.",
     sortDateDesc:"Fecha añadido ↓", sortDateAsc:"Fecha añadido ↑",
     sortAlphaAZ:"A → Z", sortAlphaZA:"Z → A",
-    sortSmileyDesc:"Nota ↓", sortSmileyAsc:"Nota ↑",
+    sortStarDesc:"Nota ↓", sortStarAsc:"Nota ↑",
     allGenres:"Todos los géneros",
     filterAll:"Todo", filterMovies:"🎬 Películas", filterSeries:"📺 Series",
     badgeMovie:"Película", badgeSerie:"Serie",
-    ratingPopupTitle:"¿Te gustó?",
+    ratingPopupTitle:"¿Tu nota?",
     ratingPopupSub:(title)=>`¿Qué opinas de "${title}"?`,
-    ratingPopupSkip:"Omitir", yourRating:"Nota :",
+    ratingPopupSkip:"Omitir",
+    yourRating:"Tu nota :",
     durationMin:"Duración mín :", durationMax:"Duración máx :",
     durationNoMin:"Sin mín", durationNoMax:"Sin máx",
     episodeDuration:(n)=>`~${n} min/ep.`,
@@ -116,17 +117,18 @@ const I18N = {
     director:"Director", cast:"With", creator:"Created by",
     seasons:(n)=> n > 1 ? `${n} seasons` : `${n} season`,
     emptyToWatch:"Nothing in your watchlist yet", emptyWatched:"Nothing watched yet",
-    confirmRemove:(t)=>`Remove "${t}" from the list?`,
+    confirmRemove:(title)=>`Remove "${title}" from the list?`,
     unauthorizedAlert:"Access not allowed for this Gmail account.",
     sortDateDesc:"Date added ↓", sortDateAsc:"Date added ↑",
     sortAlphaAZ:"A → Z", sortAlphaZA:"Z → A",
-    sortSmileyDesc:"Rating ↓", sortSmileyAsc:"Rating ↑",
+    sortStarDesc:"Rating ↓", sortStarAsc:"Rating ↑",
     allGenres:"All genres",
     filterAll:"All", filterMovies:"🎬 Movies", filterSeries:"📺 Series",
     badgeMovie:"Movie", badgeSerie:"Series",
-    ratingPopupTitle:"Did you enjoy it?",
+    ratingPopupTitle:"Your rating?",
     ratingPopupSub:(title)=>`What did you think of "${title}"?`,
-    ratingPopupSkip:"Skip", yourRating:"Rating :",
+    ratingPopupSkip:"Skip",
+    yourRating:"Your rating:",
     durationMin:"Min duration:", durationMax:"Max duration:",
     durationNoMin:"No min", durationNoMax:"No max",
     episodeDuration:(n)=>`~${n} min/ep.`,
@@ -168,7 +170,6 @@ let listSearchQuery= "";
 let unsubscribe    = null;
 let currentUser    = null;
 
-// Search buffer
 let _searchBuffer  = [];
 let _searchShown   = 0;
 const PAGE_SIZE    = 10;
@@ -192,19 +193,65 @@ function matchesDuration(m) {
 function matchesListSearch(m) {
   if (!listSearchQuery) return true;
   const q = listSearchQuery.toLowerCase();
-  const fields = [
-    m.title        || "",
-    m.overview     || "",
-    m.director     || "",   // ← maintenant stocké en Firestore
-    m.creators     || "",   // ← créateurs de séries
-    ...(m.cast     || []),  // ← tableau d'acteurs stocké en Firestore
-    ...(m.genres   || []),
-  ];
-  return fields.some(f => f.toLowerCase().includes(q));
+  return [
+    m.title || "", m.overview || "", m.director || "", m.creators || "",
+    ...(m.cast || []), ...(m.genres || []),
+  ].some(f => f.toLowerCase().includes(q));
 }
 function escHtml(s) {
   if (!s) return "";
   return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─────────────────────────────────────────
+//  STAR HELPERS
+// ─────────────────────────────────────────
+// Génère le HTML des 4 étoiles (toujours 4, pleines ou vides)
+function starsHtml(rating, size = "card") {
+  const filled = rating || 0;
+  return Array.from({length: 4}, (_, i) =>
+    `<span class="s${i < filled ? " on" : ""}">★</span>`
+  ).join("");
+}
+
+// Crée les boutons étoiles interactifs et retourne l'élément DOM
+function buildStarRating({ containerId, labelId, initialValue, onSelect }) {
+  const container = document.getElementById(containerId);
+  const labelEl   = labelId ? document.getElementById(labelId) : null;
+  if (!container) return;
+
+  let current = initialValue || 0;
+
+  container.querySelectorAll(".star-btn").forEach(btn => {
+    const val = Number(btn.dataset.val);
+
+    btn.classList.toggle("on", val <= current);
+
+    btn.addEventListener("mouseenter", () => {
+      container.querySelectorAll(".star-btn").forEach(b =>
+        b.classList.toggle("hover-on", Number(b.dataset.val) <= val));
+      if (labelEl) labelEl.textContent = STAR_LABELS[currentLang][val] || "";
+    });
+    btn.addEventListener("mouseleave", () => {
+      container.querySelectorAll(".star-btn").forEach(b => b.classList.remove("hover-on"));
+      if (labelEl) labelEl.textContent = STAR_LABELS[currentLang][current] || "";
+    });
+    btn.addEventListener("click", async () => {
+      current = val;
+      container.querySelectorAll(".star-btn").forEach(b =>
+        b.classList.toggle("on", Number(b.dataset.val) <= val));
+      if (labelEl) labelEl.textContent = STAR_LABELS[currentLang][val] || "";
+      if (onSelect) await onSelect(val);
+    });
+  });
+
+  if (labelEl) labelEl.textContent = STAR_LABELS[currentLang][current] || "";
+}
+
+function starButtonsHtml(size = "modal") {
+  return Array.from({length: 4}, (_, i) =>
+    `<button class="star-btn" data-val="${i+1}">★</button>`
+  ).join("");
 }
 
 // ─────────────────────────────────────────
@@ -238,17 +285,13 @@ document.querySelectorAll(".lang-btn").forEach(b => b.addEventListener("click", 
 //  RESET FILTERS
 // ─────────────────────────────────────────
 function resetFilters() {
-  mediaFilter     = "all";
-  genreFilter     = "all";
-  durationMin     = null;
-  durationMax     = null;
-  listSearchQuery = "";
-  sortMode        = "date_desc";
+  mediaFilter = "all"; genreFilter = "all";
+  durationMin = null;  durationMax = null;
+  listSearchQuery = ""; sortMode = "date_desc";
   localStorage.setItem("sort", sortMode);
   const lsi = document.getElementById("list-search-input");
   if (lsi) lsi.value = "";
-  buildToolbar();
-  renderLists();
+  buildToolbar(); renderLists();
 }
 
 // ─────────────────────────────────────────
@@ -262,9 +305,7 @@ function buildToolbar() {
       <select id="genre-select" class="tb-select"></select>
       <select id="sort-select" class="tb-select"></select>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-        <button id="btn-reset-filters" class="btn-reset" title="${t("resetFilters")}">
-          ↺
-        </button>
+        <button id="btn-reset-filters" class="btn-reset" title="${t("resetFilters")}">↺</button>
         <button class="view-btn" id="btn-gallery" title="Galerie">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="9" height="9" rx="1.5"/><rect x="13" y="2" width="9" height="9" rx="1.5"/><rect x="2" y="13" width="9" height="9" rx="1.5"/><rect x="13" y="13" width="9" height="9" rx="1.5"/></svg>
         </button>
@@ -273,7 +314,7 @@ function buildToolbar() {
         </button>
       </div>
     </div>
-    <div class="toolbar-row" id="duration-row">
+    <div class="toolbar-row">
       <span class="tb-label">${t("durationMin")}</span>
       <select id="dur-min" class="tb-select"></select>
       <span class="tb-label">${t("durationMax")}</span>
@@ -298,30 +339,20 @@ function buildToolbar() {
   document.getElementById("btn-reset-filters").addEventListener("click", resetFilters);
 }
 
-// ─────────────────────────────────────────
-//  SORT
-// ─────────────────────────────────────────
 function buildSortSelect() {
   const sel = document.getElementById("sort-select");
   if (!sel) return;
   sel.innerHTML = [
-    ["date_desc",   t("sortDateDesc")],
-    ["date_asc",    t("sortDateAsc")],
-    ["alpha_az",    t("sortAlphaAZ")],
-    ["alpha_za",    t("sortAlphaZA")],
-    ["smiley_desc", t("sortSmileyDesc")],
-    ["smiley_asc",  t("sortSmileyAsc")],
+    ["date_desc", t("sortDateDesc")], ["date_asc",  t("sortDateAsc")],
+    ["alpha_az",  t("sortAlphaAZ")],  ["alpha_za",  t("sortAlphaZA")],
+    ["star_desc", t("sortStarDesc")], ["star_asc",  t("sortStarAsc")],
   ].map(([v,l]) => `<option value="${v}" ${sortMode===v?"selected":""}>${l}</option>`).join("");
 }
 
-// ─────────────────────────────────────────
-//  DURATION SELECTS
-// ─────────────────────────────────────────
 function buildDurationSelects() {
   const selMin = document.getElementById("dur-min");
   const selMax = document.getElementById("dur-max");
   if (!selMin || !selMax) return;
-
   const fillMin = () => {
     selMin.innerHTML = `<option value="">${t("durationNoMin")}</option>` +
       DURATION_OPTIONS.map(d =>
@@ -330,29 +361,22 @@ function buildDurationSelects() {
   };
   const fillMax = () => {
     selMax.innerHTML = `<option value="">${t("durationNoMax")}</option>` +
-      DURATION_OPTIONS
-        .filter(d => durationMin === null || d.value > durationMin)
+      DURATION_OPTIONS.filter(d => durationMin===null||d.value>durationMin)
         .map(d =>
           `<option value="${d.value}" ${durationMax===d.value?"selected":""}>${d.label[currentLang]}</option>`
         ).join("");
   };
-
   fillMin(); fillMax();
-
   selMin.addEventListener("change", () => {
-    durationMin = selMin.value === "" ? null : Number(selMin.value);
-    if (durationMax !== null && durationMin !== null && durationMax <= durationMin) durationMax = null;
+    durationMin = selMin.value===""?null:Number(selMin.value);
+    if (durationMax!==null&&durationMin!==null&&durationMax<=durationMin) durationMax=null;
     fillMax(); renderLists();
   });
   selMax.addEventListener("change", () => {
-    durationMax = selMax.value === "" ? null : Number(selMax.value);
-    renderLists();
+    durationMax = selMax.value===""?null:Number(selMax.value); renderLists();
   });
 }
 
-// ─────────────────────────────────────────
-//  MEDIA FILTER
-// ─────────────────────────────────────────
 function buildMediaFilter() {
   const mf = document.getElementById("media-filter");
   if (!mf) return;
@@ -368,9 +392,6 @@ function buildMediaFilter() {
   });
 }
 
-// ─────────────────────────────────────────
-//  GENRE FILTER
-// ─────────────────────────────────────────
 function buildGenreSelect() {
   const sel = document.getElementById("genre-select");
   if (!sel) return;
@@ -382,29 +403,21 @@ function buildGenreSelect() {
   sel.addEventListener("change", e => { genreFilter = e.target.value; renderLists(); });
 }
 
-// ─────────────────────────────────────────
-//  VIEW TOGGLE
-// ─────────────────────────────────────────
 function applyViewMode() {
-  const g = viewMode === "gallery";
+  const g = viewMode==="gallery";
   document.getElementById("btn-gallery")?.classList.toggle("active", g);
   document.getElementById("btn-list")?.classList.toggle("active", !g);
   document.querySelectorAll(".movie-grid").forEach(el => el.classList.toggle("list-mode", !g));
 }
 
-// ─────────────────────────────────────────
-//  LIST SEARCH BAR
-// ─────────────────────────────────────────
 function buildListSearchBar() {
   if (document.getElementById("list-search-bar")) return;
   const bar = document.createElement("div");
-  bar.id = "list-search-bar";
-  bar.className = "list-search-bar";
+  bar.id = "list-search-bar"; bar.className = "list-search-bar";
   bar.innerHTML = `<input id="list-search-input" type="text" placeholder="${t("listSearchPlaceholder")}">`;
   document.querySelector(".toolbar").after(bar);
   document.getElementById("list-search-input").addEventListener("input", e => {
-    listSearchQuery = e.target.value.toLowerCase().trim();
-    renderLists();
+    listSearchQuery = e.target.value.toLowerCase().trim(); renderLists();
   });
 }
 
@@ -427,9 +440,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById("login-screen").classList.remove("hidden");
     document.getElementById("app").classList.add("hidden");
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-    if (user && !ALLOWED_EMAILS.includes(user.email)) {
-      signOut(auth); alert(t("unauthorizedAlert"));
-    }
+    if (user && !ALLOWED_EMAILS.includes(user.email)) { signOut(auth); alert(t("unauthorizedAlert")); }
   }
 });
 
@@ -470,7 +481,7 @@ async function removeItem(key) {
 }
 
 // ─────────────────────────────────────────
-//  SMILEY POPUP
+//  STAR RATING POPUP (remplace le popup smiley)
 // ─────────────────────────────────────────
 function showRatingPopup(key, title) {
   document.getElementById("rating-popup")?.remove();
@@ -481,18 +492,22 @@ function showRatingPopup(key, title) {
     <div class="rating-popup-box">
       <h3>${t("ratingPopupTitle")}</h3>
       <p>${t("ratingPopupSub", title)}</p>
-      <div class="rating-popup-smileys">
-        ${SMILEYS.map(s=>`
-          <button class="smiley-btn" data-val="${s.value}">
-            <span class="smiley-icon">${s.emoji}</span>
-            <span class="smiley-label">${s[currentLang]}</span>
-          </button>`).join("")}
-      </div>
+      <div class="popup-stars" id="popup-stars">${starButtonsHtml()}</div>
+      <div class="popup-star-label" id="popup-star-label"></div>
       <button class="rating-popup-skip">${t("ratingPopupSkip")}</button>
     </div>`;
   document.body.appendChild(popup);
-  popup.querySelectorAll(".smiley-btn").forEach(btn =>
-    btn.addEventListener("click", async () => { await saveRating(key, Number(btn.dataset.val)); popup.remove(); }));
+
+  buildStarRating({
+    containerId: "popup-stars",
+    labelId:     "popup-star-label",
+    initialValue: 0,
+    onSelect: async (val) => {
+      await saveRating(key, val);
+      setTimeout(() => popup.remove(), 300);
+    },
+  });
+
   popup.querySelector(".rating-popup-skip").addEventListener("click", () => popup.remove());
   popup.querySelector(".rating-popup-backdrop").addEventListener("click", () => popup.remove());
 }
@@ -510,14 +525,11 @@ function tmdbPageUrl(mediaType, tmdbId) {
 }
 
 async function fetchAllPages(endpoint, queryStr, lang, maxPages=5) {
-  let results = [], page = 1, totalPages = 1;
-  while (page <= totalPages && page <= maxPages) {
-    const r = await fetch(
-      `${TMDB_BASE}/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}&language=${lang}&page=${page}`
-    ).then(r=>r.json());
-    results = results.concat(r.results || []);
-    totalPages = r.total_pages || 1;
-    page++;
+  let results=[], page=1, totalPages=1;
+  while (page<=totalPages && page<=maxPages) {
+    const r = await fetch(`${TMDB_BASE}/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}&language=${lang}&page=${page}`).then(r=>r.json());
+    results = results.concat(r.results||[]);
+    totalPages = r.total_pages||1; page++;
   }
   return results;
 }
@@ -529,21 +541,16 @@ async function searchBoth(q) {
     fetchAllPages("search/tv",    q, lang),
   ]);
   const qLow = q.toLowerCase();
-  const all = [
-    ...movs.map(m  => ({...m,  _type:"movie"})),
-    ...shows.map(s => ({...s,  _type:"tv"})),
-  ].map(item => {
-    const title = (item._type==="tv" ? item.name : item.title)||"";
-    const starts = title.toLowerCase().startsWith(qLow) ? 1000 : 0;
-    return { ...item, _score: starts + (item.popularity||0) };
-  });
-  all.sort((a,b) => b._score - a._score);
-  return all;
+  return [...movs.map(m=>({...m,_type:"movie"})), ...shows.map(s=>({...s,_type:"tv"}))]
+    .map(item => {
+      const title = (item._type==="tv"?item.name:item.title)||"";
+      return { ...item, _score: (title.toLowerCase().startsWith(qLow)?1000:0)+(item.popularity||0) };
+    })
+    .sort((a,b)=>b._score-a._score);
 }
 
 async function getDetails(mediaType, tmdbId) {
-  const lang = t("tmdbLang");
-  const base = mediaType==="tv" ? "tv" : "movie";
+  const lang = t("tmdbLang"), base = mediaType==="tv"?"tv":"movie";
   const [details, credits, videos] = await Promise.all([
     fetch(`${TMDB_BASE}/${base}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
     fetch(`${TMDB_BASE}/${base}/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
@@ -558,7 +565,7 @@ async function getDetails(mediaType, tmdbId) {
 }
 
 // ─────────────────────────────────────────
-//  SEARCH UI  (FIX : "voir plus" fonctionnel)
+//  SEARCH UI
 // ─────────────────────────────────────────
 const searchInput   = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
@@ -578,27 +585,20 @@ async function doSearch() {
   appendSearchResults();
 }
 
-// FIX : on appende les résultats au lieu de recréer le conteneur
 function appendSearchResults() {
-  // Supprime l'ancien bouton "voir plus" s'il existe
   searchResults.querySelector(".sr-load-more")?.remove();
-
-  // Premier appel : vide le conteneur
   if (_searchShown === 0) searchResults.innerHTML = "";
-
-  if (_searchBuffer.length === 0) {
+  if (!_searchBuffer.length) {
     searchResults.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text2)">${t("noResults")}</div>`;
     return;
   }
-
   const slice = _searchBuffer.slice(_searchShown, _searchShown + PAGE_SIZE);
   _searchShown += slice.length;
 
   slice.forEach(m => {
-    const mtype  = m._type;
-    const key    = docKey(mtype, m.id);
+    const mtype  = m._type, key = docKey(mtype, m.id);
     const already= !!movies[key];
-    const title  = mtype==="tv" ? m.name  : m.title;
+    const title  = mtype==="tv" ? m.name : m.title;
     const year   = mtype==="tv" ? m.first_air_date?.slice(0,4) : m.release_date?.slice(0,4);
     const badge  = mtype==="tv"
       ? `<span class="type-badge tv">📺 ${t("badgeSerie")}</span>`
@@ -611,67 +611,51 @@ function appendSearchResults() {
     div.className = "search-result-item";
     Object.assign(div.dataset, {
       id: m.id, type: mtype,
-      title:    encodeURIComponent(title||""),
-      poster:   m.poster_path||"",
-      year:     year||"",
-      overview: encodeURIComponent(m.overview||""),
+      title: encodeURIComponent(title||""), poster: m.poster_path||"",
+      year: year||"", overview: encodeURIComponent(m.overview||""),
     });
-    div.innerHTML = `
-      ${poster}
+    div.innerHTML = `${poster}
       <div class="sr-info">
         <div class="sr-title">${escHtml(title)}</div>
         <div class="sr-year">${badge} ${year||"—"}</div>
       </div>
       <button class="sr-add ${already?"added":""}" ${already?"disabled":""}>
-        ${already ? t("addedBtn") : t("addBtn")}
+        ${already?t("addedBtn"):t("addBtn")}
       </button>`;
 
-    const addBtn = div.querySelector(".sr-add");
-    if (!already) {
-      addBtn.addEventListener("click", async e => {
-        e.stopPropagation();
-        const { id, type, title: rawTitle, poster, year, overview } = div.dataset;
-        const lang = t("tmdbLang");
-        const base = type==="tv"?"tv":"movie";
-        const d    = await fetch(`${TMDB_BASE}/${base}/${id}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
-        const cr   = await fetch(`${TMDB_BASE}/${base}/${id}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
-        const runtime  = type==="tv" ? ((d.episode_run_time||[])[0]||null) : (d.runtime||null);
-        // ── Stocke réalisateur/créateur et casting pour la recherche locale ──
-        const director = type==="tv"
-          ? (d.created_by||[]).map(c=>c.name).join(", ")
-          : ((cr.crew||[]).find(c=>c.job==="Director")?.name || "");
-        const castList = (cr.cast||[]).slice(0,10).map(a=>a.name);
-        await addItem({
-          tmdbId: Number(id), mediaType: type,
-          title: decodeURIComponent(rawTitle),
-          posterPath: poster, releaseYear: Number(year)||null,
-          overview: decodeURIComponent(overview),
-          genres: (d.genres||[]).map(g=>g.name),
-          runtime, director, cast: castList,
-        });
-        addBtn.textContent = t("addedBtn"); addBtn.classList.add("added"); addBtn.disabled = true;
+    div.querySelector(".sr-add:not(.added)")?.addEventListener("click", async e => {
+      e.stopPropagation();
+      const btn = div.querySelector(".sr-add");
+      const {id, type, title: rawTitle, poster, year, overview} = div.dataset;
+      const lang = t("tmdbLang"), base = type==="tv"?"tv":"movie";
+      const [d, cr] = await Promise.all([
+        fetch(`${TMDB_BASE}/${base}/${id}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+        fetch(`${TMDB_BASE}/${base}/${id}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+      ]);
+      const runtime  = type==="tv"?((d.episode_run_time||[])[0]||null):(d.runtime||null);
+      const director = type==="tv"?(d.created_by||[]).map(c=>c.name).join(", "):((cr.crew||[]).find(c=>c.job==="Director")?.name||"");
+      const castList = (cr.cast||[]).slice(0,10).map(a=>a.name);
+      await addItem({
+        tmdbId:Number(id), mediaType:type, title:decodeURIComponent(rawTitle),
+        posterPath:poster, releaseYear:Number(year)||null, overview:decodeURIComponent(overview),
+        genres:(d.genres||[]).map(g=>g.name), runtime, director, cast:castList,
       });
-    }
+      btn.textContent=t("addedBtn"); btn.classList.add("added"); btn.disabled=true;
+    });
 
     div.addEventListener("click", e => {
       if (e.target.closest(".sr-add")) return;
       openModal(div.dataset.type, Number(div.dataset.id));
     });
-
     searchResults.appendChild(div);
   });
 
-  // Bouton "voir plus" si reste des résultats
   const remaining = _searchBuffer.length - _searchShown;
   if (remaining > 0) {
     const btn = document.createElement("button");
     btn.className = "sr-load-more";
     btn.textContent = t("showMore", remaining);
-    // FIX : on bind la fonction directement sans problème de closure
-    btn.addEventListener("click", e => {
-      e.stopPropagation();
-      appendSearchResults();
-    });
+    btn.addEventListener("click", e => { e.stopPropagation(); appendSearchResults(); });
     searchResults.appendChild(btn);
   }
 }
@@ -681,17 +665,16 @@ function appendSearchResults() {
 // ─────────────────────────────────────────
 function sortAndFilter(list) {
   let out = [...list];
-  if (mediaFilter !== "all") out = out.filter(m => m.mediaType === mediaFilter);
-  if (genreFilter !== "all") out = out.filter(m => (m.genres||[]).includes(genreFilter));
-  out = out.filter(matchesDuration);
-  out = out.filter(matchesListSearch);
+  if (mediaFilter!=="all") out=out.filter(m=>m.mediaType===mediaFilter);
+  if (genreFilter!=="all") out=out.filter(m=>(m.genres||[]).includes(genreFilter));
+  out=out.filter(matchesDuration).filter(matchesListSearch);
   switch (sortMode) {
-    case "date_asc":   out.sort((a,b)=>(a.addedAt?.seconds||0)-(b.addedAt?.seconds||0)); break;
-    case "date_desc":  out.sort((a,b)=>(b.addedAt?.seconds||0)-(a.addedAt?.seconds||0)); break;
-    case "alpha_az":   out.sort((a,b)=>a.title.localeCompare(b.title)); break;
-    case "alpha_za":   out.sort((a,b)=>b.title.localeCompare(a.title)); break;
-    case "smiley_desc":out.sort((a,b)=>(b.rating||0)-(a.rating||0)); break;
-    case "smiley_asc": out.sort((a,b)=>(a.rating||0)-(b.rating||0)); break;
+    case "date_asc":  out.sort((a,b)=>(a.addedAt?.seconds||0)-(b.addedAt?.seconds||0)); break;
+    case "date_desc": out.sort((a,b)=>(b.addedAt?.seconds||0)-(a.addedAt?.seconds||0)); break;
+    case "alpha_az":  out.sort((a,b)=>a.title.localeCompare(b.title)); break;
+    case "alpha_za":  out.sort((a,b)=>b.title.localeCompare(a.title)); break;
+    case "star_desc": out.sort((a,b)=>(b.rating||0)-(a.rating||0)); break;
+    case "star_asc":  out.sort((a,b)=>(a.rating||0)-(b.rating||0)); break;
   }
   return out;
 }
@@ -700,8 +683,8 @@ function sortAndFilter(list) {
 //  RENDER
 // ─────────────────────────────────────────
 function renderLists() {
-  const toWatch = Object.values(movies).filter(m => m.status==="to_watch");
-  const watched = Object.values(movies).filter(m => m.status==="watched");
+  const toWatch = Object.values(movies).filter(m=>m.status==="to_watch");
+  const watched = Object.values(movies).filter(m=>m.status==="watched");
   document.getElementById("count-to-watch").textContent = toWatch.length;
   document.getElementById("count-watched").textContent  = watched.length;
   renderGrid("to_watch", sortAndFilter(toWatch));
@@ -718,26 +701,27 @@ function renderGrid(status, list) {
     </div>`; return;
   }
   grid.innerHTML = list.map(m => {
-    const key   = docKey(m.mediaType, m.tmdbId);
-    const poster= m.posterPath
+    const key    = docKey(m.mediaType, m.tmdbId);
+    const poster = m.posterPath
       ? `<img src="${TMDB_IMG}${m.posterPath}" alt="${escHtml(m.title)}" loading="lazy">`
       : `<div class="no-poster">${m.mediaType==="tv"?"📺":"🎬"}</div>`;
-    const smiley = m.rating ? SMILEYS.find(s=>s.value===m.rating) : null;
-    const emoji  = smiley ? `<span class="card-emoji" title="${smiley[currentLang]}">${smiley.emoji}</span>` : "";
-    const typeDot= m.mediaType==="tv" ? "📺" : "🎬";
-    const runtime= m.runtime
+    const typeDot  = m.mediaType==="tv"?"📺":"🎬";
+    const runtime  = m.runtime
       ? (m.mediaType==="tv"
-          ? `<span class="card-runtime">${t("episodeDuration", m.runtime)}</span>`
-          : `<span class="card-runtime">⏱ ${formatRuntime(m.runtime)}</span>`)
+          ? t("episodeDuration", m.runtime)
+          : `⏱ ${formatRuntime(m.runtime)}`)
       : "";
+    // Étoiles — toujours présentes, vides si pas de note (alignement garanti)
+    const stars = `<span class="card-stars">${starsHtml(m.rating)}</span>`;
     return `<div class="movie-card" data-key="${key}" data-type="${m.mediaType}" data-id="${m.tmdbId}">
       ${poster}
       <div class="card-body">
         <div class="card-title">${escHtml(m.title)}</div>
-        <div class="card-meta">
-          <span class="card-meta-left">${m.releaseYear||"—"} ${typeDot}</span>
-          <span class="card-meta-right">${runtime}${emoji}</span>
+        <div class="card-bottom">
+          <span class="card-year-type">${m.releaseYear||"—"} ${typeDot}</span>
+          ${stars}
         </div>
+        ${runtime?`<div class="card-runtime">${runtime}</div>`:""}
       </div>
     </div>`;
   }).join("");
@@ -758,29 +742,28 @@ async function openModal(mediaType, tmdbId) {
   const inCollection = movies[key];
   const { details, credits, videoResults } = await getDetails(mediaType, tmdbId);
 
-  const title  = mediaType==="tv" ? details.name  : details.title;
-  const year   = mediaType==="tv" ? details.first_air_date?.slice(0,4) : details.release_date?.slice(0,4);
-  const genres = (details.genres||[]).map(g=>g.name).join(", ");
-  const cast   = (credits.cast||[]).slice(0,5).map(a=>a.name).join(", ");
-  const trailer= videoResults.find(v=>v.site==="YouTube"&&v.type==="Trailer");
+  const title   = mediaType==="tv" ? details.name : details.title;
+  const year    = mediaType==="tv" ? details.first_air_date?.slice(0,4) : details.release_date?.slice(0,4);
+  const genres  = (details.genres||[]).map(g=>g.name).join(", ");
+  const cast    = (credits.cast||[]).slice(0,5).map(a=>a.name).join(", ");
+  const trailer = videoResults.find(v=>v.site==="YouTube"&&v.type==="Trailer");
 
   let metaExtra = "";
   if (mediaType==="tv") {
-    const s  = details.number_of_seasons;
-    const ep = (details.episode_run_time||[])[0];
-    if (s)  metaExtra += t("seasons", s);
-    if (ep) metaExtra += (metaExtra?" · ":"") + t("episodeDuration", ep);
+    const s=details.number_of_seasons, ep=(details.episode_run_time||[])[0];
+    if (s)  metaExtra+=t("seasons",s);
+    if (ep) metaExtra+=(metaExtra?" · ":"")+t("episodeDuration",ep);
   } else if (details.runtime) {
-    metaExtra = `⏱ ${formatRuntime(details.runtime)}`;
+    metaExtra=`⏱ ${formatRuntime(details.runtime)}`;
   }
 
-  let creatorHtml = "";
+  let creatorHtml="";
   if (mediaType==="tv") {
-    const creators = (details.created_by||[]).map(c=>c.name).join(", ");
-    if (creators) creatorHtml = `<div class="modal-cast"><strong>${t("creator")} :</strong> ${escHtml(creators)}</div>`;
+    const creators=(details.created_by||[]).map(c=>c.name).join(", ");
+    if (creators) creatorHtml=`<div class="modal-cast"><strong>${t("creator")} :</strong> ${escHtml(creators)}</div>`;
   } else {
-    const director = (credits.crew||[]).find(c=>c.job==="Director");
-    if (director) creatorHtml = `<div class="modal-cast"><strong>${t("director")} :</strong> ${escHtml(director.name)}</div>`;
+    const director=(credits.crew||[]).find(c=>c.job==="Director");
+    if (director) creatorHtml=`<div class="modal-cast"><strong>${t("director")} :</strong> ${escHtml(director.name)}</div>`;
   }
 
   const posterHtml = details.poster_path
@@ -791,27 +774,25 @@ async function openModal(mediaType, tmdbId) {
     ? `<span class="type-badge tv">📺 ${t("badgeSerie")}</span>`
     : `<span class="type-badge movie">🎬 ${t("badgeMovie")}</span>`;
 
-  const tmdbLink = `<a class="tmdb-link" href="${tmdbPageUrl(mediaType, tmdbId)}" target="_blank" rel="noopener">
+  const tmdbLink = `<a class="tmdb-link" href="${tmdbPageUrl(mediaType,tmdbId)}" target="_blank" rel="noopener">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
       <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
     </svg>TMDB
   </a>`;
 
+  // Note étoiles dans la modal (uniquement si film vu)
   let ratingHtml = "";
   if (inCollection?.status==="watched") {
     ratingHtml = `
       <div class="modal-section-title">${t("yourRating")}</div>
-      <div class="smiley-rating" id="modal-smiley-rating">
-        ${SMILEYS.map(s=>`
-          <button class="smiley-btn ${s.value===(inCollection.rating||0)?"active":""}" data-val="${s.value}">
-            <span class="smiley-icon">${s.emoji}</span>
-            <span class="smiley-label">${s[currentLang]}</span>
-          </button>`).join("")}
+      <div class="star-rating-row">
+        <div id="modal-stars">${starButtonsHtml()}</div>
+        <span class="star-label" id="modal-star-label"></span>
       </div>`;
   }
 
-  let actions = "";
+  let actions="";
   if (inCollection) {
     actions += inCollection.status==="to_watch"
       ? `<button class="btn-primary" id="modal-watched">${t("markWatched")}</button>`
@@ -841,44 +822,43 @@ async function openModal(mediaType, tmdbId) {
       </div>
     </div>`;
 
-  document.querySelectorAll("#modal-smiley-rating .smiley-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const val = Number(btn.dataset.val);
-      document.querySelectorAll("#modal-smiley-rating .smiley-btn").forEach(b =>
-        b.classList.toggle("active", Number(b.dataset.val)===val));
-      await saveRating(key, val);
+  // Active les étoiles interactives si film vu
+  if (inCollection?.status==="watched") {
+    buildStarRating({
+      containerId:  "modal-stars",
+      labelId:      "modal-star-label",
+      initialValue: inCollection.rating || 0,
+      onSelect: async (val) => { await saveRating(key, val); },
     });
-  });
+  }
 
   document.getElementById("modal-add")?.addEventListener("click", async () => {
-    const lang = t("tmdbLang");
-    const base = mediaType==="tv"?"tv":"movie";
-    const d  = await fetch(`${TMDB_BASE}/${base}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
-    const cr = await fetch(`${TMDB_BASE}/${base}/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json());
-    const runtime  = mediaType==="tv" ? ((d.episode_run_time||[])[0]||null) : (d.runtime||null);
-    const director = mediaType==="tv"
-      ? (d.created_by||[]).map(c=>c.name).join(", ")
-      : ((cr.crew||[]).find(c=>c.job==="Director")?.name || "");
-    const castList = (cr.cast||[]).slice(0,10).map(a=>a.name);
+    const lang=t("tmdbLang"), base=mediaType==="tv"?"tv":"movie";
+    const [d,cr]=await Promise.all([
+      fetch(`${TMDB_BASE}/${base}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+      fetch(`${TMDB_BASE}/${base}/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+    ]);
+    const runtime=mediaType==="tv"?((d.episode_run_time||[])[0]||null):(d.runtime||null);
+    const director=mediaType==="tv"?(d.created_by||[]).map(c=>c.name).join(", "):((cr.crew||[]).find(c=>c.job==="Director")?.name||"");
+    const castList=(cr.cast||[]).slice(0,10).map(a=>a.name);
     await addItem({
-      tmdbId, mediaType, title,
-      posterPath: details.poster_path||"", releaseYear: Number(year)||null,
-      overview: details.overview||"", genres: (d.genres||[]).map(g=>g.name),
-      runtime, director, cast: castList,
+      tmdbId, mediaType, title, posterPath:details.poster_path||"",
+      releaseYear:Number(year)||null, overview:details.overview||"",
+      genres:(d.genres||[]).map(g=>g.name), runtime, director, cast:castList,
     });
     closeModal();
   });
-  document.getElementById("modal-watched")?.addEventListener("click", () => markWatched(key, title));
-  document.getElementById("modal-to-watch")?.addEventListener("click", async () => { await markToWatch(key); closeModal(); });
-  document.getElementById("modal-remove")?.addEventListener("click", async () => {
-    if (confirm(t("confirmRemove", title))) { await removeItem(key); closeModal(); }
+  document.getElementById("modal-watched")?.addEventListener("click", ()=>markWatched(key,title));
+  document.getElementById("modal-to-watch")?.addEventListener("click", async()=>{await markToWatch(key);closeModal();});
+  document.getElementById("modal-remove")?.addEventListener("click", async()=>{
+    if (confirm(t("confirmRemove",title))){await removeItem(key);closeModal();}
   });
 }
 
 function closeModal() { document.getElementById("modal").classList.add("hidden"); }
 document.getElementById("modal-close").addEventListener("click", closeModal);
 document.querySelector(".modal-backdrop").addEventListener("click", closeModal);
-document.addEventListener("keydown", e => { if (e.key==="Escape") closeModal(); });
+document.addEventListener("keydown", e=>{if(e.key==="Escape")closeModal();});
 
 // ─────────────────────────────────────────
 //  TABS
@@ -886,7 +866,7 @@ document.addEventListener("keydown", e => { if (e.key==="Escape") closeModal(); 
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
     currentTab = tab.dataset.tab;
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
     tab.classList.add("active");
     document.getElementById("list-to_watch").classList.toggle("hidden", currentTab!=="to_watch");
     document.getElementById("list-watched").classList.toggle("hidden",  currentTab!=="watched");
