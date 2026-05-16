@@ -410,3 +410,31 @@ header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spaci
   cursor: pointer; transition: color .2s; font-family: 'DM Sans', sans-serif;
 }
 .notif-dismiss:hover { color: var(--text); }
+
+/* ── JUSTWATCH / PROVIDERS ── */
+.providers-wrap {
+  display: block; text-decoration: none;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px; margin-top: 6px;
+  transition: border-color .2s;
+}
+.providers-wrap:hover { border-color: rgba(255,255,255,.2); }
+.providers-group {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.providers-group:last-of-type { margin-bottom: 6px; }
+.providers-type {
+  font-size: 11px; color: var(--text2); white-space: nowrap;
+  min-width: 54px; text-transform: uppercase; letter-spacing: .4px;
+}
+.providers-logos { display: flex; flex-wrap: wrap; gap: 6px; }
+.provider-logo {
+  width: 36px; height: 36px; border-radius: 8px;
+  object-fit: cover; border: 1px solid var(--border);
+  transition: transform .15s, border-color .15s;
+}
+.provider-logo:hover { transform: scale(1.1); border-color: rgba(255,255,255,.3); }
+.providers-powered {
+  display: block; font-size: 10px; color: var(--text2);
+  text-align: right; margin-top: 2px;
+}
