@@ -73,6 +73,10 @@ const I18N = {
     listSearchPlaceholder:"Filtrer par titre, réalisateur, acteur…",
     showMore:(n)=>`Voir plus (${n} restants)`,
     resetFilters:"↺ Réinitialiser les filtres",
+    notifTitle:(n) => n === 1 ? "1 nouveau titre ajouté" : `${n} nouveaux titres ajoutés`,
+    notifBy:(email) => `par ${email.split("@")[0]}`,
+    notifSee:"Voir →",
+    notifDismiss:"✕",
     tmdbLang:"fr-FR",
   },
   es: {
@@ -104,6 +108,10 @@ const I18N = {
     listSearchPlaceholder:"Filtrar por título, director, actor…",
     showMore:(n)=>`Ver más (${n} restantes)`,
     resetFilters:"↺ Restablecer filtros",
+    notifTitle:(n) => n === 1 ? "1 nuevo título añadido" : `${n} nuevos títulos añadidos`,
+    notifBy:(email) => `por ${email.split("@")[0]}`,
+    notifSee:"Ver →",
+    notifDismiss:"✕",
     tmdbLang:"es-ES",
   },
   en: {
@@ -135,6 +143,10 @@ const I18N = {
     listSearchPlaceholder:"Filter by title, director, actor…",
     showMore:(n)=>`Show more (${n} remaining)`,
     resetFilters:"↺ Reset filters",
+    notifTitle:(n) => n === 1 ? "1 new title added" : `${n} new titles added`,
+    notifBy:(email) => `by ${email.split("@")[0]}`,
+    notifSee:"See →",
+    notifDismiss:"✕",
     tmdbLang:"en-US",
   },
 };
@@ -173,6 +185,91 @@ let currentUser    = null;
 let _searchBuffer  = [];
 let _searchShown   = 0;
 const PAGE_SIZE    = 10;
+
+// ─────────────────────────────────────────
+//  NOTIFICATIONS — dernière visite
+// ─────────────────────────────────────────
+// Clé localStorage : stocke le timestamp (ms) de la dernière connexion
+const LAST_SEEN_KEY = "lastSeen";
+
+// Appelé une seule fois après connexion : lit lastSeen, puis le met à jour
+let _lastSeenTs = 0;
+function initLastSeen() {
+  const stored = localStorage.getItem(LAST_SEEN_KEY);
+  _lastSeenTs = stored ? Number(stored) : 0;
+  // On met à jour lastSeen MAINTENANT pour la prochaine session
+  localStorage.setItem(LAST_SEEN_KEY, Date.now().toString());
+}
+
+// Appelé après le premier chargement de Firestore
+// Cherche les titres ajoutés par l'AUTRE utilisateur depuis lastSeen
+function checkNewItems() {
+  if (!currentUser || !_lastSeenTs) return;
+  const myEmail = currentUser.email;
+
+  const newItems = Object.values(movies).filter(m => {
+    if (!m.addedAt?.seconds) return false;               // pas encore persisté
+    if (m.addedBy === myEmail) return false;              // ajouté par moi
+    return m.addedAt.seconds * 1000 > _lastSeenTs;       // plus récent que ma dernière visite
+  });
+
+  if (newItems.length === 0) return;
+
+  showNotifBanner(newItems);
+}
+
+function showNotifBanner(items) {
+  document.getElementById("notif-banner")?.remove();
+
+  const otherEmail = items[0].addedBy || "";
+  const banner = document.createElement("div");
+  banner.id = "notif-banner";
+  banner.className = "notif-banner";
+
+  // Détail des titres (max 3 affichés)
+  const preview = items.slice(0, 3).map(m =>
+    `<span class="notif-item">${escHtml(m.title)}</span>`
+  ).join("");
+  const more = items.length > 3
+    ? `<span class="notif-more">+${items.length - 3}</span>`
+    : "";
+
+  banner.innerHTML = `
+    <div class="notif-content">
+      <span class="notif-icon">🔔</span>
+      <div class="notif-text">
+        <strong>${t("notifTitle", items.length)}</strong>
+        <span class="notif-by">${t("notifBy", otherEmail)}</span>
+        <div class="notif-items">${preview}${more}</div>
+      </div>
+    </div>
+    <div class="notif-actions">
+      <button class="notif-see">${t("notifSee")}</button>
+      <button class="notif-dismiss">${t("notifDismiss")}</button>
+    </div>`;
+
+  // Insérer sous le header
+  document.querySelector("header").after(banner);
+
+  // "Voir →" : bascule sur l'onglet "à voir" et ferme
+  banner.querySelector(".notif-see").addEventListener("click", () => {
+    // Active l'onglet "to_watch"
+    document.querySelectorAll(".tab").forEach(tab => {
+      const isToWatch = tab.dataset.tab === "to_watch";
+      tab.classList.toggle("active", isToWatch);
+    });
+    document.getElementById("list-to_watch").classList.remove("hidden");
+    document.getElementById("list-watched").classList.add("hidden");
+    currentTab = "to_watch";
+    banner.remove();
+  });
+
+  // Fermer
+  banner.querySelector(".notif-dismiss").addEventListener("click", () => banner.remove());
+
+  // Auto-disparition après 10 secondes
+  setTimeout(() => banner?.remove(), 10000);
+}
 
 // ─────────────────────────────────────────
 //  UTILS
@@ -434,6 +531,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById("login-screen").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
     document.getElementById("user-email").textContent = user.email;
+    initLastSeen();  // ← mémorise la date de visite précédente
     startListening();
   } else {
     currentUser = null;
@@ -447,6 +545,8 @@ onAuthStateChanged(auth, user => {
 // ─────────────────────────────────────────
 //  FIRESTORE
 // ─────────────────────────────────────────
+let _firstLoad = true;  // détecte le premier chargement Firestore
+
 function startListening() {
   const q = query(collection(db, "movies"), orderBy("addedAt", "desc"));
   unsubscribe = onSnapshot(q, snap => {
@@ -454,6 +554,11 @@ function startListening() {
     snap.forEach(d => { movies[d.id] = d.data(); });
     buildGenreSelect();
     renderLists();
+    // Vérification des nouveautés uniquement au premier chargement
+    if (_firstLoad) {
+      _firstLoad = false;
+      checkNewItems();
+    }
   });
 }
 
