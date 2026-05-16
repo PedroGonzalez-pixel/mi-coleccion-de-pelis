@@ -362,3 +362,51 @@ header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spaci
   .modal-poster { width: 100%; max-width: 200px; margin: 0 auto; }
   #user-email { display: none; }
 }
+
+/* ── BANDEAU DE NOTIFICATION ── */
+.notif-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  background: var(--bg2);
+  border-bottom: 2px solid var(--accent);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  animation: slideDown .3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.notif-content {
+  display: flex; align-items: flex-start; gap: 12px; flex: 1;
+}
+.notif-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.notif-text { display: flex; flex-direction: column; gap: 2px; }
+.notif-text strong { font-size: 14px; color: var(--text); }
+.notif-by { font-size: 12px; color: var(--text2); }
+.notif-items {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+}
+.notif-item {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 8px;
+  font-size: 12px; color: var(--text);
+}
+.notif-more {
+  font-size: 12px; color: var(--text2);
+  display: flex; align-items: center;
+}
+.notif-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.notif-see {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 6px; padding: 6px 14px; font-size: 13px;
+  font-family: 'DM Sans', sans-serif; cursor: pointer;
+  transition: opacity .2s; white-space: nowrap;
+}
+.notif-see:hover { opacity: .85; }
+.notif-dismiss {
+  background: transparent; color: var(--text2); border: 1px solid var(--border);
+  border-radius: 6px; width: 28px; height: 28px; font-size: 13px;
+  cursor: pointer; transition: color .2s; font-family: 'DM Sans', sans-serif;
+}
+.notif-dismiss:hover { color: var(--text); }
