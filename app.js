@@ -77,6 +77,12 @@ const I18N = {
     notifBy:(email) => `par ${email.split("@")[0]}`,
     notifSee:"Voir →",
     notifDismiss:"✕",
+    historyTitle:"Historique",
+    histActionAdd:(who, title) => `${who} a ajouté`,
+    histActionWatch:(who, title) => `${who} a marqué comme vu`,
+    histActionRate:(who, stars) => `${who} a noté`,
+    histEmpty:"Aucune activité récente",
+    histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
     tmdbLang:"fr-FR",
   },
   es: {
@@ -112,6 +118,12 @@ const I18N = {
     notifBy:(email) => `por ${email.split("@")[0]}`,
     notifSee:"Ver →",
     notifDismiss:"✕",
+    historyTitle:"Historial",
+    histActionAdd:(who) => `${who} añadió`,
+    histActionWatch:(who) => `${who} marcó como vista`,
+    histActionRate:(who) => `${who} valoró`,
+    histEmpty:"Sin actividad reciente",
+    histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
     tmdbLang:"es-ES",
   },
   en: {
@@ -147,6 +159,12 @@ const I18N = {
     notifBy:(email) => `by ${email.split("@")[0]}`,
     notifSee:"See →",
     notifDismiss:"✕",
+    historyTitle:"History",
+    histActionAdd:(who) => `${who} added`,
+    histActionWatch:(who) => `${who} marked as watched`,
+    histActionRate:(who) => `${who} rated`,
+    histEmpty:"No recent activity",
+    histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
     tmdbLang:"en-US",
   },
 };
@@ -266,10 +284,172 @@ function showNotifBanner(items) {
 
   // Fermer
   banner.querySelector(".notif-dismiss").addEventListener("click", () => banner.remove());
-
-  // Auto-disparition après 10 secondes
-  setTimeout(() => banner?.remove(), 10000);
+  // PAS d'auto-disparition — le bandeau reste jusqu'au clic utilisateur
 }
+
+// ─────────────────────────────────────────
+//  HISTORIQUE — panneau latéral
+// ─────────────────────────────────────────
+let _historyOpen = false;
+let _unreadCount = 0;
+
+// Construit la liste des actions à partir des données Firestore existantes
+function buildHistoryEvents() {
+  const events = [];
+  const allMovies = Object.values(movies);
+
+  allMovies.forEach(m => {
+    const who = (m.addedBy || "").split("@")[0];
+    // Ajout
+    if (m.addedAt?.seconds) {
+      events.push({
+        type: "add",
+        ts:   m.addedAt.seconds * 1000,
+        who,
+        title: m.title,
+        poster: m.posterPath,
+        mediaType: m.mediaType,
+        tmdbId: m.tmdbId,
+      });
+    }
+    // Visionnage
+    if (m.watchedAt?.seconds) {
+      events.push({
+        type: "watch",
+        ts:   m.watchedAt.seconds * 1000,
+        who,
+        title: m.title,
+        poster: m.posterPath,
+        mediaType: m.mediaType,
+        tmdbId: m.tmdbId,
+      });
+    }
+    // Note
+    if (m.rating && m.watchedAt?.seconds) {
+      events.push({
+        type:   "rate",
+        ts:     m.watchedAt.seconds * 1000 + 1, // légèrement après le visionnage
+        who,
+        title:  m.title,
+        poster: m.posterPath,
+        rating: m.rating,
+        mediaType: m.mediaType,
+        tmdbId: m.tmdbId,
+      });
+    }
+  });
+
+  // Trie du plus récent au plus ancien
+  events.sort((a, b) => b.ts - a.ts);
+  return events.slice(0, 50); // max 50 entrées
+}
+
+function formatRelativeTime(ts) {
+  const diff = Date.now() - ts;
+  const min  = Math.floor(diff / 60000);
+  const h    = Math.floor(diff / 3600000);
+  const d    = Math.floor(diff / 86400000);
+  if (min < 1)  return currentLang === "fr" ? "à l'instant" : currentLang === "es" ? "ahora mismo" : "just now";
+  if (min < 60) return currentLang === "fr" ? `il y a ${min} min` : currentLang === "es" ? `hace ${min} min` : `${min} min ago`;
+  if (h < 24)   return currentLang === "fr" ? `il y a ${h}h` : currentLang === "es" ? `hace ${h}h` : `${h}h ago`;
+  return currentLang === "fr" ? `il y a ${d}j` : currentLang === "es" ? `hace ${d}d` : `${d}d ago`;
+}
+
+function renderHistoryPanel() {
+  const list   = document.getElementById("history-list");
+  const title  = document.getElementById("history-title");
+  if (!list || !title) return;
+  title.textContent = t("historyTitle");
+
+  const events = buildHistoryEvents();
+
+  if (!events.length) {
+    list.innerHTML = `<div class="hist-empty">${t("histEmpty")}</div>`;
+    return;
+  }
+
+  const TMDB_IMG_TINY = "https://image.tmdb.org/t/p/w92";
+
+  list.innerHTML = events.map(ev => {
+    const poster = ev.poster
+      ? `<img class="hist-poster" src="${TMDB_IMG_TINY}${ev.poster}" alt="">`
+      : `<div class="hist-poster hist-poster-placeholder">${ev.mediaType==="tv"?"📺":"🎬"}</div>`;
+
+    let action = "", detail = "";
+    if (ev.type === "add") {
+      action = t("histActionAdd", ev.who);
+      detail = `<span class="hist-badge hist-badge-add">+</span>`;
+    } else if (ev.type === "watch") {
+      action = t("histActionWatch", ev.who);
+      detail = `<span class="hist-badge hist-badge-watch">✓</span>`;
+    } else if (ev.type === "rate") {
+      action = t("histActionRate", ev.who);
+      detail = `<span class="hist-stars">${t("histStars", ev.rating)}</span>`;
+    }
+
+    const isNew = ev.ts > _lastSeenTs;
+
+    return `<div class="hist-item${isNew?" hist-item-new":""}"
+        data-type="${ev.mediaType}" data-id="${ev.tmdbId}">
+      <div class="hist-poster-wrap">${poster}${detail}</div>
+      <div class="hist-info">
+        <div class="hist-action">${action}</div>
+        <div class="hist-title">${escHtml(ev.title)}</div>
+        <div class="hist-time">${formatRelativeTime(ev.ts)}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Clic sur un item → ouvre la modal du film
+  list.querySelectorAll(".hist-item").forEach(item => {
+    item.addEventListener("click", () => {
+      closeHistoryPanel();
+      openModal(item.dataset.type, Number(item.dataset.id));
+    });
+  });
+}
+
+function updateHistoryBadge() {
+  if (!currentUser) return;
+  const myEmail  = currentUser.email;
+  const newCount = Object.values(movies).filter(m =>
+    m.addedBy !== myEmail &&
+    m.addedAt?.seconds &&
+    m.addedAt.seconds * 1000 > _lastSeenTs
+  ).length;
+
+  _unreadCount = newCount;
+  const badge = document.getElementById("history-badge");
+  if (!badge) return;
+  if (newCount > 0) {
+    badge.textContent = newCount > 9 ? "9+" : String(newCount);
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+function openHistoryPanel() {
+  _historyOpen = true;
+  renderHistoryPanel();
+  document.getElementById("history-panel").classList.remove("hidden");
+  document.getElementById("history-backdrop").classList.remove("hidden");
+  // Masque le badge une fois le panneau ouvert
+  document.getElementById("history-badge")?.classList.add("hidden");
+}
+
+function closeHistoryPanel() {
+  _historyOpen = false;
+  document.getElementById("history-panel").classList.add("hidden");
+  document.getElementById("history-backdrop").classList.add("hidden");
+}
+
+// Listeners cloche / fermeture
+document.getElementById("btn-history").addEventListener("click", () => {
+  _historyOpen ? closeHistoryPanel() : openHistoryPanel();
+});
+document.getElementById("btn-history-close").addEventListener("click", closeHistoryPanel);
+document.getElementById("history-backdrop").addEventListener("click", closeHistoryPanel);
 
 // ─────────────────────────────────────────
 //  UTILS
@@ -554,6 +734,9 @@ function startListening() {
     snap.forEach(d => { movies[d.id] = d.data(); });
     buildGenreSelect();
     renderLists();
+    updateHistoryBadge();  // ← met à jour le badge cloche
+    // Re-render le panneau si ouvert
+    if (_historyOpen) renderHistoryPanel();
     // Vérification des nouveautés uniquement au premier chargement
     if (_firstLoad) {
       _firstLoad = false;
