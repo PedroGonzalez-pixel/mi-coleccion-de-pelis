@@ -656,17 +656,20 @@ async function searchBoth(q) {
 
 async function getDetails(mediaType, tmdbId) {
   const lang = t("tmdbLang"), base = mediaType==="tv"?"tv":"movie";
-  const [details, credits, videos] = await Promise.all([
+  const [details, credits, videos, providers] = await Promise.all([
     fetch(`${TMDB_BASE}/${base}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
     fetch(`${TMDB_BASE}/${base}/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
     fetch(`${TMDB_BASE}/${base}/${tmdbId}/videos?api_key=${TMDB_API_KEY}&language=${lang}`).then(r=>r.json()),
+    fetch(`${TMDB_BASE}/${base}/${tmdbId}/watch/providers?api_key=${TMDB_API_KEY}`).then(r=>r.json()),
   ]);
   let vids = videos.results||[];
   if (!vids.length) {
     const fb = await fetch(`${TMDB_BASE}/${base}/${tmdbId}/videos?api_key=${TMDB_API_KEY}&language=en-US`).then(r=>r.json());
     vids = fb.results||[];
   }
-  return { details, credits, videoResults: vids };
+  // Extrait les plateformes pour la France (FR)
+  const frProviders = (providers.results||{}).FR || null;
+  return { details, credits, videoResults: vids, frProviders };
 }
 
 // ─────────────────────────────────────────
@@ -845,7 +848,7 @@ async function openModal(mediaType, tmdbId) {
 
   const key          = docKey(mediaType, tmdbId);
   const inCollection = movies[key];
-  const { details, credits, videoResults } = await getDetails(mediaType, tmdbId);
+  const { details, credits, videoResults, frProviders } = await getDetails(mediaType, tmdbId);
 
   const title   = mediaType==="tv" ? details.name : details.title;
   const year    = mediaType==="tv" ? details.first_air_date?.slice(0,4) : details.release_date?.slice(0,4);
@@ -886,6 +889,43 @@ async function openModal(mediaType, tmdbId) {
     </svg>TMDB
   </a>`;
 
+  // ── Plateformes de streaming (JustWatch via TMDB) ──
+  let providersHtml = "";
+  if (frProviders) {
+    const jwLink = frProviders.link || "https://www.justwatch.com";
+    const sections = [];
+
+    // Inclus : abonnement (flatrate), location (rent), achat (buy)
+    const types = [
+      { key: "flatrate", label: { fr:"Inclus", es:"Incluido", en:"Streaming" } },
+      { key: "rent",     label: { fr:"Location", es:"Alquiler", en:"Rent" } },
+      { key: "buy",      label: { fr:"Achat", es:"Compra", en:"Buy" } },
+    ];
+
+    for (const { key: pKey, label } of types) {
+      const list = frProviders[pKey];
+      if (!list?.length) continue;
+      const logos = list.map(p =>
+        `<img class="provider-logo" src="https://image.tmdb.org/t/p/original${p.logo_path}"
+          alt="${escHtml(p.provider_name)}" title="${escHtml(p.provider_name)}">`
+      ).join("");
+      sections.push(`
+        <div class="providers-group">
+          <span class="providers-type">${label[currentLang]}</span>
+          <div class="providers-logos">${logos}</div>
+        </div>`);
+    }
+
+    if (sections.length) {
+      providersHtml = `
+        <div class="modal-section-title">🇫🇷 Où regarder</div>
+        <a class="providers-wrap" href="${escHtml(jwLink)}" target="_blank" rel="noopener">
+          ${sections.join("")}
+          <span class="providers-powered">Données JustWatch</span>
+        </a>`;
+    }
+  }
+
   // Note étoiles dans la modal (uniquement si film vu)
   let ratingHtml = "";
   if (inCollection?.status==="watched") {
@@ -922,6 +962,7 @@ async function openModal(mediaType, tmdbId) {
         ${creatorHtml}
         ${cast?`<div class="modal-cast"><strong>${t("cast")} :</strong> ${escHtml(cast)}</div>`:""}
         ${details.overview?`<div class="modal-overview">${escHtml(details.overview)}</div>`:""}
+        ${providersHtml}
         ${ratingHtml}
         <div class="modal-actions">${actions}</div>
       </div>
