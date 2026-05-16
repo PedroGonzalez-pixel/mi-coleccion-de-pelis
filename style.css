@@ -438,3 +438,97 @@ header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spaci
   display: block; font-size: 10px; color: var(--text2);
   text-align: right; margin-top: 2px;
 }
+
+/* ── CLOCHE HISTORIQUE ── */
+.btn-history {
+  position: relative;
+  background: transparent; color: var(--text2);
+  border: 1px solid var(--border); border-radius: 8px;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: color .2s, border-color .2s; flex-shrink: 0;
+}
+.btn-history:hover { color: var(--text); border-color: rgba(255,255,255,.25); }
+.history-badge {
+  position: absolute; top: -5px; right: -5px;
+  background: var(--accent); color: #fff;
+  border-radius: 10px; min-width: 18px; height: 18px;
+  font-size: 10px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; border: 2px solid var(--bg2);
+}
+
+/* ── PANNEAU HISTORIQUE ── */
+.history-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 320px; max-width: 90vw;
+  background: var(--bg2); border-left: 1px solid var(--border);
+  z-index: 90; display: flex; flex-direction: column;
+  animation: slideIn .25s ease;
+  box-shadow: -8px 0 32px rgba(0,0,0,.5);
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.history-backdrop {
+  position: fixed; inset: 0; z-index: 89;
+  background: rgba(0,0,0,.4); backdrop-filter: blur(2px);
+}
+.history-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.history-header span {
+  font-weight: 600; font-size: 15px; color: var(--text);
+}
+.history-header button {
+  background: transparent; color: var(--text2); border: 1px solid var(--border);
+  border-radius: 6px; width: 28px; height: 28px; font-size: 13px;
+  cursor: pointer; transition: color .2s; font-family: 'DM Sans', sans-serif;
+}
+.history-header button:hover { color: var(--text); }
+.history-list {
+  flex: 1; overflow-y: auto; padding: 8px 0;
+}
+.hist-empty {
+  padding: 40px 20px; text-align: center; color: var(--text2); font-size: 14px;
+}
+
+/* ── ITEMS HISTORIQUE ── */
+.hist-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+.hist-item:hover { background: var(--bg3); }
+.hist-item:last-child { border-bottom: none; }
+.hist-item-new { border-left: 3px solid var(--accent); padding-left: 13px; }
+.hist-poster-wrap { position: relative; flex-shrink: 0; }
+.hist-poster {
+  width: 40px; height: 56px; object-fit: cover;
+  border-radius: 4px; display: block; background: var(--bg3);
+}
+.hist-poster-placeholder {
+  width: 40px; height: 56px; background: var(--bg3);
+  border-radius: 4px; display: flex; align-items: center;
+  justify-content: center; font-size: 18px;
+}
+.hist-badge {
+  position: absolute; bottom: -4px; right: -4px;
+  width: 16px; height: 16px; border-radius: 50%;
+  font-size: 9px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg2);
+}
+.hist-badge-add   { background: var(--accent); color: #fff; }
+.hist-badge-watch { background: #2a9d8f; color: #fff; }
+.hist-info { flex: 1; min-width: 0; }
+.hist-action { font-size: 11px; color: var(--text2); margin-bottom: 2px; }
+.hist-title {
+  font-size: 13px; font-weight: 500; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hist-time { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.hist-stars { font-size: 13px; color: #f4a261; letter-spacing: 1px; }
