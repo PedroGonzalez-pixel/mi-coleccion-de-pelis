@@ -299,49 +299,52 @@ function buildHistoryEvents() {
   const allMovies = Object.values(movies);
 
   allMovies.forEach(m => {
-    const who = (m.addedBy || "").split("@")[0];
-    // Ajout
+    const addedWho   = (m.addedBy   || "").split("@")[0];
+    const watchedWho = (m.watchedBy || "").split("@")[0]; // "" si ancien film sans ce champ
+
+    // Ajout — toujours attribué à addedBy (fiable)
     if (m.addedAt?.seconds) {
       events.push({
-        type: "add",
-        ts:   m.addedAt.seconds * 1000,
-        who,
-        title: m.title,
-        poster: m.posterPath,
+        type:      "add",
+        ts:        m.addedAt.seconds * 1000,
+        who:       addedWho,
+        title:     m.title,
+        poster:    m.posterPath,
         mediaType: m.mediaType,
-        tmdbId: m.tmdbId,
+        tmdbId:    m.tmdbId,
       });
     }
-    // Visionnage
+
+    // Visionnage — attribué à watchedBy si disponible, sinon anonyme
     if (m.watchedAt?.seconds) {
       events.push({
-        type: "watch",
-        ts:   m.watchedAt.seconds * 1000,
-        who,
-        title: m.title,
-        poster: m.posterPath,
+        type:      "watch",
+        ts:        m.watchedAt.seconds * 1000,
+        who:       watchedWho,   // "" pour les anciens films → affiché sans nom
+        title:     m.title,
+        poster:    m.posterPath,
         mediaType: m.mediaType,
-        tmdbId: m.tmdbId,
+        tmdbId:    m.tmdbId,
       });
     }
-    // Note
+
+    // Note — même attribution que le visionnage (c'est la même personne)
     if (m.rating && m.watchedAt?.seconds) {
       events.push({
-        type:   "rate",
-        ts:     m.watchedAt.seconds * 1000 + 1, // légèrement après le visionnage
-        who,
-        title:  m.title,
-        poster: m.posterPath,
-        rating: m.rating,
+        type:      "rate",
+        ts:        m.watchedAt.seconds * 1000 + 1,
+        who:       watchedWho,   // "" pour les anciens films
+        title:     m.title,
+        poster:    m.posterPath,
+        rating:    m.rating,
         mediaType: m.mediaType,
-        tmdbId: m.tmdbId,
+        tmdbId:    m.tmdbId,
       });
     }
   });
 
-  // Trie du plus récent au plus ancien
   events.sort((a, b) => b.ts - a.ts);
-  return events.slice(0, 50); // max 50 entrées
+  return events.slice(0, 50);
 }
 
 function formatRelativeTime(ts) {
@@ -376,14 +379,15 @@ function renderHistoryPanel() {
       : `<div class="hist-poster hist-poster-placeholder">${ev.mediaType==="tv"?"📺":"🎬"}</div>`;
 
     let action = "", detail = "";
+    const whoLabel = ev.who || (currentLang === "fr" ? "Inconnu" : currentLang === "es" ? "Desconocido" : "Unknown");
     if (ev.type === "add") {
-      action = t("histActionAdd", ev.who);
+      action = t("histActionAdd", whoLabel);
       detail = `<span class="hist-badge hist-badge-add">+</span>`;
     } else if (ev.type === "watch") {
-      action = t("histActionWatch", ev.who);
+      action = t("histActionWatch", whoLabel);
       detail = `<span class="hist-badge hist-badge-watch">✓</span>`;
     } else if (ev.type === "rate") {
-      action = t("histActionRate", ev.who);
+      action = t("histActionRate", whoLabel);
       detail = `<span class="hist-stars">${t("histStars", ev.rating)}</span>`;
     }
 
@@ -755,7 +759,11 @@ async function addItem(item) {
   });
 }
 async function markWatched(key, title) {
-  await updateDoc(doc(db,"movies",key), { status:"watched", watchedAt: serverTimestamp() });
+  await updateDoc(doc(db,"movies",key), {
+    status:"watched",
+    watchedAt: serverTimestamp(),
+    watchedBy: currentUser.email,   // ← stocke qui a marqué comme vu
+  });
   closeModal(); showRatingPopup(key, title);
 }
 async function markToWatch(key) {
