@@ -532,3 +532,34 @@ header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spaci
 }
 .hist-time { font-size: 11px; color: var(--text2); margin-top: 2px; }
 .hist-stars { font-size: 13px; color: #f4a261; letter-spacing: 1px; }
+
+/* ── NOTE PERSONNELLE (modal) ── */
+.modal-note-wrap {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; margin-top: 6px;
+}
+.modal-note-input {
+  width: 100%; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px;
+  padding: 10px 14px; resize: none; min-height: 72px; line-height: 1.6;
+}
+.modal-note-input::placeholder { color: var(--text2); }
+.modal-note-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px 8px; border-top: 1px solid var(--border);
+}
+.modal-note-count { font-size: 11px; color: var(--text2); }
+.btn-note-save {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 6px; padding: 5px 14px; font-size: 12px;
+  font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity .2s;
+}
+.btn-note-save:hover { opacity: .85; }
+.btn-note-save:disabled { opacity: .5; cursor: default; }
+
+/* Indicateur note sur carte (petit point si note présente) */
+.card-has-note {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  title: "Note personnelle";
+}
