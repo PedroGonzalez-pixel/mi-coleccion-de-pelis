@@ -83,6 +83,9 @@ const I18N = {
     histActionRate:(who, stars) => `${who} a noté`,
     histEmpty:"Aucune activité récente",
     histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
+    notePlaceholder:"Note personnelle… (ex: voir en VO, recommandé par…)",
+    noteSave:"Enregistrer",
+    noteSaved:"✓ Enregistré",
     tmdbLang:"fr-FR",
   },
   es: {
@@ -124,6 +127,9 @@ const I18N = {
     histActionRate:(who) => `${who} valoró`,
     histEmpty:"Sin actividad reciente",
     histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
+    notePlaceholder:"Nota personal… (ej: ver en VO, recomendado por…)",
+    noteSave:"Guardar",
+    noteSaved:"✓ Guardado",
     tmdbLang:"es-ES",
   },
   en: {
@@ -165,6 +171,9 @@ const I18N = {
     histActionRate:(who) => `${who} rated`,
     histEmpty:"No recent activity",
     histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
+    notePlaceholder:"Personal note… (e.g. watch in VO, recommended by…)",
+    noteSave:"Save",
+    noteSaved:"✓ Saved",
     tmdbLang:"en-US",
   },
 };
@@ -476,6 +485,7 @@ function matchesListSearch(m) {
   const q = listSearchQuery.toLowerCase();
   return [
     m.title || "", m.overview || "", m.director || "", m.creators || "",
+    m.note  || "",  // ← note personnelle searchable
     ...(m.cast || []), ...(m.genres || []),
   ].some(f => f.toLowerCase().includes(q));
 }
@@ -772,6 +782,9 @@ async function markToWatch(key) {
 async function saveRating(key, value) {
   await updateDoc(doc(db,"movies",key), { rating: value });
 }
+async function saveNote(key, note) {
+  await updateDoc(doc(db,"movies",key), { note: note.trim() || null });
+}
 async function removeItem(key) {
   await deleteDoc(doc(db,"movies",key));
 }
@@ -1011,13 +1024,14 @@ function renderGrid(status, list) {
           : `⏱ ${formatRuntime(m.runtime)}`)
       : "";
     // Étoiles — toujours présentes, vides si pas de note (alignement garanti)
-    const stars = `<span class="card-stars">${starsHtml(m.rating)}</span>`;
+    const stars   = `<span class="card-stars">${starsHtml(m.rating)}</span>`;
+    const noteDot = m.note ? `<span class="card-has-note" title="${escHtml(m.note)}"></span>` : "";
     return `<div class="movie-card" data-key="${key}" data-type="${m.mediaType}" data-id="${m.tmdbId}">
       ${poster}
       <div class="card-body">
         <div class="card-title">${escHtml(m.title)}</div>
         <div class="card-bottom">
-          <span class="card-year-type">${m.releaseYear||"—"} ${typeDot}</span>
+          <span class="card-year-type">${m.releaseYear||"—"} ${typeDot} ${noteDot}</span>
           ${stars}
         </div>
         ${runtime?`<div class="card-runtime">${runtime}</div>`:""}
@@ -1128,6 +1142,20 @@ async function openModal(mediaType, tmdbId) {
       </div>`;
   }
 
+  // ── Note personnelle (champ libre, tous titres) ──
+  const existingNote = inCollection?.note || "";
+  const noteHtml = `
+    <div class="modal-section-title" style="margin-top:16px">📝 ${currentLang==="fr"?"Note personnelle":currentLang==="es"?"Nota personal":"Personal note"}</div>
+    <div class="modal-note-wrap">
+      <textarea id="modal-note-input" class="modal-note-input"
+        placeholder="${t("notePlaceholder")}"
+        maxlength="300">${escHtml(existingNote)}</textarea>
+      <div class="modal-note-footer">
+        <span id="modal-note-count" class="modal-note-count">${existingNote.length}/300</span>
+        <button id="modal-note-save" class="btn-note-save">${t("noteSave")}</button>
+      </div>
+    </div>`;
+
   let actions="";
   if (inCollection) {
     actions += inCollection.status==="to_watch"
@@ -1155,6 +1183,7 @@ async function openModal(mediaType, tmdbId) {
         ${details.overview?`<div class="modal-overview">${escHtml(details.overview)}</div>`:""}
         ${providersHtml}
         ${ratingHtml}
+        ${inCollection ? noteHtml : ""}
         <div class="modal-actions">${actions}</div>
       </div>
     </div>`;
@@ -1166,6 +1195,29 @@ async function openModal(mediaType, tmdbId) {
       labelId:      "modal-star-label",
       initialValue: inCollection.rating || 0,
       onSelect: async (val) => { await saveRating(key, val); },
+    });
+  }
+
+  // ── Listeners note personnelle ──
+  const noteInput   = document.getElementById("modal-note-input");
+  const noteSaveBtn = document.getElementById("modal-note-save");
+  const noteCount   = document.getElementById("modal-note-count");
+  if (noteInput && noteSaveBtn) {
+    noteInput.addEventListener("input", () => {
+      noteCount.textContent = `${noteInput.value.length}/300`;
+    });
+    noteSaveBtn.addEventListener("click", async () => {
+      await saveNote(key, noteInput.value);
+      noteSaveBtn.textContent = t("noteSaved");
+      noteSaveBtn.disabled = true;
+      setTimeout(() => {
+        noteSaveBtn.textContent = t("noteSave");
+        noteSaveBtn.disabled = false;
+      }, 2000);
+    });
+    // Ctrl+Enter pour sauvegarder rapidement
+    noteInput.addEventListener("keydown", e => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) noteSaveBtn.click();
     });
   }
 
