@@ -81,6 +81,7 @@ const I18N = {
     histActionAdd:(who, title) => `${who} a ajouté`,
     histActionWatch:(who, title) => `${who} a marqué comme vu`,
     histActionRate:(who, stars) => `${who} a noté`,
+    histActionNote:(who) => `${who} a laissé une note`,
     histEmpty:"Aucune activité récente",
     histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
     notePlaceholder:"Note personnelle… (ex: voir en VO, recommandé par…)",
@@ -125,6 +126,7 @@ const I18N = {
     histActionAdd:(who) => `${who} añadió`,
     histActionWatch:(who) => `${who} marcó como vista`,
     histActionRate:(who) => `${who} valoró`,
+    histActionNote:(who) => `${who} dejó una nota`,
     histEmpty:"Sin actividad reciente",
     histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
     notePlaceholder:"Nota personal… (ej: ver en VO, recomendado por…)",
@@ -169,6 +171,7 @@ const I18N = {
     histActionAdd:(who) => `${who} added`,
     histActionWatch:(who) => `${who} marked as watched`,
     histActionRate:(who) => `${who} rated`,
+    histActionNote:(who) => `${who} left a note`,
     histEmpty:"No recent activity",
     histStars:(n) => "★".repeat(n) + "☆".repeat(4-n),
     notePlaceholder:"Personal note… (e.g. watch in VO, recommended by…)",
@@ -350,6 +353,20 @@ function buildHistoryEvents() {
         tmdbId:    m.tmdbId,
       });
     }
+
+    // Note personnelle — utilise noteBy et noteAt (nouveaux champs)
+    if (m.note && m.noteAt?.seconds && m.noteBy) {
+      events.push({
+        type:      "note",
+        ts:        m.noteAt.seconds * 1000,
+        who:       (m.noteBy || "").split("@")[0],
+        title:     m.title,
+        poster:    m.posterPath,
+        note:      m.note,
+        mediaType: m.mediaType,
+        tmdbId:    m.tmdbId,
+      });
+    }
   });
 
   events.sort((a, b) => b.ts - a.ts);
@@ -398,6 +415,9 @@ function renderHistoryPanel() {
     } else if (ev.type === "rate") {
       action = t("histActionRate", whoLabel);
       detail = `<span class="hist-stars">${t("histStars", ev.rating)}</span>`;
+    } else if (ev.type === "note") {
+      action = t("histActionNote", whoLabel);
+      detail = `<span class="hist-badge hist-badge-note">📝</span>`;
     }
 
     const isNew = ev.ts > _lastSeenTs;
@@ -408,6 +428,7 @@ function renderHistoryPanel() {
       <div class="hist-info">
         <div class="hist-action">${action}</div>
         <div class="hist-title">${escHtml(ev.title)}</div>
+        ${ev.type === "note" ? `<div class="hist-note-excerpt">${escHtml(ev.note.slice(0,60))}${ev.note.length>60?"…":""}</div>` : ""}
         <div class="hist-time">${formatRelativeTime(ev.ts)}</div>
       </div>
     </div>`;
@@ -783,7 +804,11 @@ async function saveRating(key, value) {
   await updateDoc(doc(db,"movies",key), { rating: value });
 }
 async function saveNote(key, note) {
-  await updateDoc(doc(db,"movies",key), { note: note.trim() || null });
+  await updateDoc(doc(db,"movies",key), {
+    note:   note.trim() || null,
+    noteBy: note.trim() ? currentUser.email : null,
+    noteAt: note.trim() ? serverTimestamp() : null,
+  });
 }
 async function removeItem(key) {
   await deleteDoc(doc(db,"movies",key));
