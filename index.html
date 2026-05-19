@@ -41,7 +41,6 @@
           <button class="lang-btn" data-lang="en">🇬🇧</button>
         </div>
         <span id="user-email"></span>
-        <!-- Cloche historique -->
         <button id="btn-history" class="btn-history" title="Historique">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -53,7 +52,7 @@
       </div>
     </header>
 
-    <!-- PANNEAU HISTORIQUE (drawer latéral) -->
+    <!-- PANNEAU HISTORIQUE -->
     <div id="history-panel" class="history-panel hidden">
       <div class="history-header">
         <span id="history-title">Historique</span>
@@ -84,6 +83,11 @@
 
     <!-- TOOLBAR -->
     <div class="toolbar"></div>
+
+    <!-- LIST SEARCH -->
+    <div class="list-search-bar">
+      <input id="list-search-input" type="text"/>
+    </div>
 
     <!-- MOVIE LISTS -->
     <div id="list-to_watch" class="movie-grid"></div>
